@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Reset Password | The Readers Collective</title>
+	<script src="app/theme.js"></script>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="styles.css">
+	<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+	<main class="wrap auth-wrap">
+		<section class="panel hero auth-hero">
+			<button id="theme-toggle-btn" class="icon-btn theme-toggle-corner" type="button" data-theme-toggle aria-label="Switch to dark mode" title="Switch to dark mode"><i data-lucide="moon" aria-hidden="true"></i></button>
+			<h1>The Readers Collective</h1>
+			<p>Choose a new password for your account.</p>
+		</section>
+		<section class="panel auth-panel-page">
+			<div class="grid single-column">
+				<article>
+					<h2 class="card-title">Reset Password</h2>
+					<form id="reset-password-form" class="auth-card">
+						<div class="field">
+							<label for="new-password">New password</label>
+							<input id="new-password" type="password" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="At least 8 characters">
+						</div>
+						<div class="field">
+							<label for="confirm-password">Confirm new password</label>
+							<input id="confirm-password" type="password" required minlength="8" maxlength="128" autocomplete="new-password">
+						</div>
+						<button class="btn-main" type="submit">Reset Password</button>
+						<p id="reset-password-status" class="hint"></p>
+					</form>
+				</article>
+			</div>
+		</section>
+	</main>
+	<script src="reset.js" defer></script>
+</body>
+</html>

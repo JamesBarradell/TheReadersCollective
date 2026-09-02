@@ -1,0 +1,210 @@
+{
+  "users": [
+    {
+      "id": "e1802bf3-a845-44f8-a3d3-a4dfee191484",
+      "email": "minifunk22@gmail.com",
+      "passwordHash": "$2a$10$siKk6nJyYGwDg.iGtNwVyeq7xhBlGudOLwYuN0q0mCJJLFSDilw9O",
+      "avatarUrl": "https://lh3.googleusercontent.com/a/ACg8ocIPj_zYGLTpDooz7VC-5A_ZHKt6zSSp-ygjbWiB3a6YVqK1bQ=s96-c",
+      "createdAt": 1783677269493,
+      "googleId": "115198471054408908681",
+      "authProvider": "google",
+      "readingGoal": 12
+    },
+    {
+      "id": "3169e0aa-8c80-4ab2-a800-8f3f7ad536b5",
+      "email": "georgia.l.clewes@gmail.com",
+      "passwordHash": "$2a$10$GJ0um1BcvXrZVmr1asQoFOwW.KcuOrpCpO8uTIqaya5tkoWqUQ7T6",
+      "avatarUrl": "",
+      "createdAt": 1784233168232
+    },
+    {
+      "id": "45a5271f-8c51-47ea-a822-3de61d8dbf0f",
+      "email": "qa_user_20260817@example.com",
+      "passwordHash": "$2a$10$zqx7UJtkwggTOdBE1WzGZ.K8r3oMb1045rsjnOEcJQxFD8X6gQgmS",
+      "avatarUrl": "",
+      "createdAt": 1786960685765
+    },
+    {
+      "id": "f71a7f83-ff74-49db-ad3d-f2db0e2e3565",
+      "email": "jamesbarradell2001@gmail.com",
+      "passwordHash": "",
+      "avatarUrl": "https://lh3.googleusercontent.com/a/ACg8ocIOwWtcfVJgHRg9ajJZV99L4UbFpGLX9uAGwUTgLe5rgiGybQ=s96-c",
+      "googleId": "114782466281531777357",
+      "authProvider": "google",
+      "createdAt": 1787913327453
+    }
+  ],
+  "books": [
+    {
+      "id": "dfe54cef-785f-48fd-8c02-2cb263f753a9",
+      "userId": "3169e0aa-8c80-4ab2-a800-8f3f7ad536b5",
+      "title": "Out of the Woods",
+      "author": "Hannah Bonam-Young",
+      "genre": "Romance",
+      "rating": 4,
+      "year": 2025,
+      "isRead": true,
+      "createdAt": 1784233666106,
+      "finishedAt": "2026-07-16",
+      "coverUrl": "",
+      "startedAt": ""
+    },
+    {
+      "id": "c7402c99-9f81-4116-a105-9f478bb5d30b",
+      "userId": "e1802bf3-a845-44f8-a3d3-a4dfee191484",
+      "title": "The Lord of the Rings",
+      "author": "J.R.R. Tolkien",
+      "genre": "Fantasy",
+      "rating": 5,
+      "year": 1959,
+      "isRead": true,
+      "createdAt": 1784235489453,
+      "finishedAt": "2026-07-16",
+      "coverUrl": "https://covers.openlibrary.org/b/id/14625765-M.jpg",
+      "startedAt": ""
+    },
+    {
+      "id": "62e69db0-0b1d-46eb-9889-1253407c7844",
+      "userId": "3169e0aa-8c80-4ab2-a800-8f3f7ad536b5",
+      "title": "Enchantra",
+      "author": "Kaylie Smith",
+      "genre": "Fantasy",
+      "rating": 4,
+      "year": 2025,
+      "isRead": true,
+      "createdAt": 1784235550603,
+      "finishedAt": "2026-07-16",
+      "coverUrl": "",
+      "startedAt": ""
+    },
+    {
+      "id": "e713dfec-72e3-4c09-ba77-54dba2b0f3a2",
+      "userId": "3169e0aa-8c80-4ab2-a800-8f3f7ad536b5",
+      "title": "Vengeance of the Pirate Queen",
+      "author": "Tricia Levenseller",
+      "genre": "Fantasy",
+      "rating": 5,
+      "year": 2023,
+      "isRead": true,
+      "createdAt": 1784236897810,
+      "finishedAt": "2026-07-16",
+      "coverUrl": "",
+      "startedAt": ""
+    },
+    {
+      "id": "580a0fb0-b547-4ec1-bbbc-be6a79d9ba6a",
+      "userId": "3169e0aa-8c80-4ab2-a800-8f3f7ad536b5",
+      "title": "Freeing the Wild",
+      "author": "Paisley Hope",
+      "genre": "Romance",
+      "rating": 4.5,
+      "year": 2025,
+      "isRead": true,
+      "createdAt": 1784237497932,
+      "finishedAt": "2026-07-16",
+      "coverUrl": "",
+      "startedAt": ""
+    },
+    {
+      "id": "3a70f677-1e5b-4041-afb4-910b892b74fb",
+      "userId": "e1802bf3-a845-44f8-a3d3-a4dfee191484",
+      "title": "Lord of the Flies",
+      "author": "William Golding",
+      "genre": "Adventure",
+      "rating": 1,
+      "year": 1954,
+      "isRead": false,
+      "createdAt": 1784277234747,
+      "finishedAt": "",
+      "coverUrl": "https://covers.openlibrary.org/b/id/8684447-M.jpg",
+      "startedAt": ""
+    },
+    {
+      "id": "ab4d4434-0195-4675-b739-3cfe1b5134f4",
+      "userId": "45a5271f-8c51-47ea-a822-3de61d8dbf0f",
+      "title": "Manual Test Book",
+      "author": "",
+      "genre": "Fantasy",
+      "rating": 1,
+      "year": "",
+      "isRead": false,
+      "createdAt": 1786960695406,
+      "finishedAt": "",
+      "coverUrl": "",
+      "startedAt": ""
+    },
+    {
+      "id": "39e52023-7dfa-446c-abc8-36f7c2f599e5",
+      "userId": "e1802bf3-a845-44f8-a3d3-a4dfee191484",
+      "title": "Red Rising",
+      "author": "Pierce Brown",
+      "genre": "Adventure",
+      "rating": 5,
+      "year": 2014,
+      "isRead": true,
+      "startedAt": "2026-08-05",
+      "finishedAt": "2026-08-27",
+      "coverUrl": "https://covers.openlibrary.org/b/id/7316188-M.jpg",
+      "createdAt": 1787818314615
+    },
+    {
+      "id": "c2f08150-69a8-4255-a8ec-51fdea2b0cfd",
+      "userId": "e1802bf3-a845-44f8-a3d3-a4dfee191484",
+      "title": "Iron Gold",
+      "author": "Pierce Brown",
+      "genre": "Biography",
+      "rating": 1,
+      "year": 2018,
+      "isRead": false,
+      "startedAt": "2026-08-12",
+      "finishedAt": "",
+      "coverUrl": "https://covers.openlibrary.org/b/id/14511722-M.jpg",
+      "createdAt": 1787914972886
+    }
+  ],
+  "friendships": [
+    {
+      "key": "3169e0aa-8c80-4ab2-a800-8f3f7ad536b5::e1802bf3-a845-44f8-a3d3-a4dfee191484",
+      "userId": "e1802bf3-a845-44f8-a3d3-a4dfee191484",
+      "friendId": "3169e0aa-8c80-4ab2-a800-8f3f7ad536b5",
+      "createdAt": 1784237483558
+    }
+  ],
+  "messages": [
+    {
+      "id": "fd3229e1-49fd-43f8-911e-b53d6a1a362d",
+      "fromUserId": "e1802bf3-a845-44f8-a3d3-a4dfee191484",
+      "toUserId": "3169e0aa-8c80-4ab2-a800-8f3f7ad536b5",
+      "text": "hello",
+      "createdAt": 1784237493761
+    },
+    {
+      "id": "99b52d7e-e5fd-4c21-b0cf-61d280915f4a",
+      "fromUserId": "3169e0aa-8c80-4ab2-a800-8f3f7ad536b5",
+      "toUserId": "e1802bf3-a845-44f8-a3d3-a4dfee191484",
+      "text": "hey!",
+      "createdAt": 1784237513793
+    },
+    {
+      "id": "e051525b-965b-4b8b-93cc-b7bda406debc",
+      "fromUserId": "e1802bf3-a845-44f8-a3d3-a4dfee191484",
+      "toUserId": "3169e0aa-8c80-4ab2-a800-8f3f7ad536b5",
+      "text": "Bed time?",
+      "createdAt": 1784237535344
+    },
+    {
+      "id": "385722a8-6ce9-4200-b82c-7802071e297e",
+      "fromUserId": "3169e0aa-8c80-4ab2-a800-8f3f7ad536b5",
+      "toUserId": "e1802bf3-a845-44f8-a3d3-a4dfee191484",
+      "text": "aye xxx",
+      "createdAt": 1784237544496
+    },
+    {
+      "id": "003d44aa-a1be-4a02-ac63-3d6095a25df6",
+      "fromUserId": "e1802bf3-a845-44f8-a3d3-a4dfee191484",
+      "toUserId": "3169e0aa-8c80-4ab2-a800-8f3f7ad536b5",
+      "text": "Nobhead",
+      "createdAt": 1787818326273
+    }
+  ]
+}

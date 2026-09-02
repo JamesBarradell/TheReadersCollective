@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>The Readers Collective</title>
+	<script src="app/theme.js"></script>
+	<script>
+		(() => {
+			const token = localStorage.getItem("readers-corner-auth-token") || sessionStorage.getItem("readers-corner-session-auth-token");
+			if (!token) window.location.replace(window.location.protocol === "file:" ? new URL("index.html", window.location.href).href : "index.html");
+		})();
+	</script>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="styles.css">
+	<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+	<main class="wrap">
+		<section class="panel hero">
+			<div class="account-strip">
+				<div class="account-meta">
+					<img id="profile-avatar" class="profile-avatar" alt="Profile avatar">
+					<div>
+						<p id="account-email" class="account-email">Sign in required</p>
+						<p id="account-note" class="hint">Sign in to sync your shelf across devices.</p>
+					</div>
+				</div>
+				<div class="account-actions">
+					<button id="theme-toggle-btn" class="icon-btn" type="button" data-theme-toggle aria-label="Switch to dark mode" title="Switch to dark mode"><i data-lucide="moon" aria-hidden="true"></i></button>
+					<button id="view-my-profile-btn" class="icon-btn" type="button" aria-label="View your public profile" title="View your public profile"><i data-lucide="circle-user-round" aria-hidden="true"></i></button>
+					<button id="settings-btn" class="icon-btn" type="button" aria-label="Open profile settings" title="Profile settings"><i data-lucide="settings" aria-hidden="true"></i></button>
+					<button id="logout-btn" class="icon-btn" type="button" aria-label="Log out" title="Log out"><i data-lucide="log-out" aria-hidden="true"></i></button>
+				</div>
+			</div>
+			<div class="app-heading">
+				<h1>The Readers Collective</h1>
+				<nav class="view-nav" aria-label="Main navigation">
+					<button class="active" type="button" data-view="library" aria-current="page">Library</button>
+					<button type="button" data-view="wishlist">Wishlist</button>
+					<button type="button" data-view="shelf">My Bookshelf</button>
+					<button type="button" data-view="community">Community <span id="community-message-count" class="notification-badge" hidden aria-label="0 new messages">0</span><span id="community-request-count" class="notification-badge" hidden aria-label="0 friend requests">0</span></button>
+				</nav>
+			</div>
+		</section>
+
+		<section id="library-view" class="panel library-panel app-view">
+			<div class="library-dashboard">
+				<article class="dashboard-section now-reading-section" aria-labelledby="now-reading-title">
+					<div class="toolbar">
+						<div>
+							<h2 id="now-reading-title" class="card-title">Now Reading</h2>
+							<p class="hint">Keep your current books moving.</p>
+						</div>
+					</div>
+					<div id="now-reading-list" class="now-reading-list"></div>
+				</article>
+					<article class="dashboard-section add-book-section">
+					<h2 class="card-title">Add A Book</h2>
+					<div class="search-panel" aria-label="Search known books">
+						<div class="search-row">
+							<input id="book-search" type="search" placeholder="Search by title, author, ISBN, genre, or series (try series: The Expanse)">
+							<button id="search-btn" class="btn-sub" type="button">Search Books</button>
+						</div>
+						<p id="search-status" class="hint">Search by title, author, or series. Example: series: The Expanse.</p>
+						<div id="search-results" class="search-results"></div>
+					</div>
+					<details class="manual-entry">
+						<summary>Add a book manually</summary>
+						<form id="book-form">
+						<div class="form-grid">
+							<div class="field full">
+								<label for="title">Book title</label>
+								<input id="title" name="title" required placeholder="Example: The Hobbit">
+							</div>
+
+							<div class="field">
+								<label for="author">Author</label>
+								<input id="author" name="author" placeholder="Example: J.R.R. Tolkien">
+							</div>
+
+							<div class="field">
+								<label for="genre">Genre</label>
+								<select id="genre" name="genre">
+									<option value="Fantasy">Fantasy</option>
+									<option value="Science Fiction">Science Fiction</option>
+									<option value="Mystery">Mystery</option>
+									<option value="Thriller">Thriller</option>
+									<option value="Romance">Romance</option>
+									<option value="Historical Fiction">Historical Fiction</option>
+									<option value="Literary Fiction">Literary Fiction</option>
+									<option value="Horror">Horror</option>
+									<option value="Adventure">Adventure</option>
+									<option value="Crime">Crime</option>
+									<option value="Dystopian">Dystopian</option>
+									<option value="Young Adult">Young Adult</option>
+									<option value="Children's">Children's</option>
+									<option value="Nonfiction">Nonfiction</option>
+									<option value="Biography">Biography</option>
+									<option value="Memoir">Memoir</option>
+									<option value="Self-Help">Self-Help</option>
+									<option value="Business">Business</option>
+									<option value="Philosophy">Philosophy</option>
+									<option value="Poetry">Poetry</option>
+									<option value="Other">Other</option>
+								</select>
+							</div>
+							
+							<input id="rating" name="rating" type="hidden" value="2.5">
+
+							<div class="field">
+								<label for="year">Year (optional)</label>
+								<input id="year" name="year" type="number" min="0" max="3000" placeholder="2026">
+							</div>
+							<div class="field">
+								<label for="page-count">Total pages (optional)</label>
+								<input id="page-count" name="pageCount" type="number" min="0" max="100000" placeholder="320">
+							</div>
+							<div class="field">
+								<label for="current-page">Current page (optional)</label>
+								<input id="current-page" name="currentPage" type="number" min="0" max="100000" placeholder="0">
+							</div>
+							<div class="field">
+								<label for="started-at">Started on</label>
+								<input id="started-at" name="startedAt" type="date">
+							</div>
+							<div class="field">
+								<label for="finished-at">Finished on</label>
+								<input id="finished-at" name="finishedAt" type="date">
+							</div>
+							<input id="cover-url" name="coverUrl" type="hidden">
+
+							<div class="field full">
+								<div class="checkbox-row">
+									<input id="is-read" name="isRead" type="checkbox">
+									<label for="is-read">I have read this book</label>
+								</div>
+								<p class="hint">Tip: you can add owned books now and mark them as read later.</p>
+							</div>
+						</div>
+
+						<div class="btn-row">
+							<button class="btn-main" id="book-submit" type="submit">Save Book</button>
+						</div>
+					</form>
+					</details>
+					<section class="shelf-recommendations" aria-labelledby="shelf-recommendations-title">
+						<div class="toolbar"><div><h3 id="shelf-recommendations-title">Picked For Your Shelf</h3><p id="recommendations-copy" class="hint">Recommendations will appear from your reading tastes.</p></div><button id="refresh-recommendations" class="icon-btn" type="button" aria-label="Refresh book recommendations" title="Refresh recommendations"><i data-lucide="refresh-cw" aria-hidden="true"></i></button></div>
+						<div id="shelf-recommendations-list" class="shelf-recommendations-list"></div>
+					</section>
+					</article>
+
+					<article class="dashboard-section stats-section">
+					<h2 class="card-title">Reading Statistics</h2>
+					<form id="reading-goal-form" class="reading-goal-form">
+						<div class="field">
+							<label for="reading-goal">Annual books read goal</label>
+							<input id="reading-goal" name="readingGoal" type="number" min="1" max="1000" value="12" required>
+						</div>
+						<button class="btn-main" type="submit">Save Goal</button>
+					</form>
+					<p id="reading-goal-status" class="hint">Set the number of books you want to finish this year.</p>
+					<div class="stats">
+						<div class="stat">
+							<p class="k">Books owned</p>
+							<p class="v" id="stat-owned">0</p>
+						</div>
+						<div class="stat">
+							<p class="k">Books read this year</p>
+							<p class="v" id="stat-read">0</p>
+						</div>
+						<div class="stat">
+							<p class="k">Average rating (read)</p>
+							<p class="v" id="stat-average">0.00</p>
+						</div>
+						<div class="stat">
+							<p class="k">Top rated book</p>
+							<p class="v" id="stat-top">-</p>
+						</div>
+					</div>
+					<div class="accent-bar" aria-label="Progress of books read">
+						<div id="read-progress"></div>
+					</div>
+					<p class="hint" id="progress-copy">0% of owned books are marked as read.</p>
+					<div class="accent-bar goal-progress" aria-label="Progress toward annual reading goal">
+						<div id="goal-progress"></div>
+					</div>
+					<p class="hint" id="goal-progress-copy">0 of 12 books completed.</p>
+					<section class="reading-history" aria-labelledby="reading-history-title">
+						<h3 id="reading-history-title">This Year's Reading</h3>
+						<div id="monthly-history" class="monthly-history"></div>
+					</section>
+					<section class="shelf-insights" aria-labelledby="shelf-insights-title">
+						<div class="toolbar"><h3 id="shelf-insights-title">Shelf Insights</h3><button id="download-share-card" class="icon-btn" type="button" aria-label="Download goal share card" title="Download goal share card"><i data-lucide="share-2" aria-hidden="true"></i></button></div>
+						<p id="insights-scope" class="hint insights-scope">Showing the full year. <button id="clear-insights-month" class="link-btn" type="button" hidden>Show full year</button></p>
+						<div id="insights-list" class="insights-list"></div>
+					</section>
+					</article>
+
+					<article class="shelf-article shelf-section">
+							<div class="toolbar">
+								<h2 class="card-title" style="margin-bottom: 0;">Your Shelf</h2>
+								<div class="shelf-controls">
+									<input id="shelf-search" type="search" aria-label="Search your shelf" placeholder="Search your shelf">
+									<select id="genre-filter" aria-label="Filter books by genre">
+										<option value="all">All genres</option>
+									</select>
+									<select id="tag-filter" aria-label="Filter books by tag"><option value="all">All tags</option></select>
+									<select id="sort-view" aria-label="Sort books">
+										<option value="recent">Recently added</option>
+										<option value="finished">Date read (newest first)</option>
+										<option value="finished-asc">Date read (oldest first)</option>
+										<option value="title">Title</option>
+										<option value="rating">Highest rated</option>
+									</select>
+									<button id="shelf-menu-btn" class="icon-btn" type="button" aria-label="Shelf options" title="Shelf options"><i data-lucide="ellipsis" aria-hidden="true"></i></button>
+								</div>
+							</div>
+							<div id="status-tabs" class="status-tabs" role="tablist" aria-label="Filter shelf by status">
+								<button type="button" class="active" data-filter="all" role="tab" aria-selected="true">All</button>
+								<button type="button" data-filter="reading" role="tab" aria-selected="false">Reading</button>
+								<button type="button" data-filter="want" role="tab" aria-selected="false">Want to read</button>
+								<button type="button" data-filter="dnf" role="tab" aria-selected="false">DNF</button>
+								<button type="button" data-filter="finished" role="tab" aria-selected="false">Finished</button>
+							</div>
+							<div class="bookshelf-frame">
+								<div id="books" class="books side-books"></div>
+							</div>
+						</article>
+			</div>
+		</section>
+
+		<section id="wishlist-view" class="panel app-view" hidden>
+			<div class="wishlist-page">
+				<div class="toolbar"><div><h2 id="wishlist-page-title" class="card-title">Wishlist</h2><p class="hint">Books you want to read but do not own yet.</p></div></div>
+				<div id="wishlist-list" class="wishlist-list"></div>
+			</div>
+		</section>
+
+		<section id="shelf-view" class="panel app-view" hidden>
+			<div class="bookshelf-page">
+				<div class="toolbar">
+					<div>
+						<h2 class="card-title">My Bookshelf</h2>
+						<p class="hint">Drag your books to arrange them however you like.</p>
+					</div>
+					<div class="account-actions">
+						<div class="bookcase-color-picker">
+							<button id="bookcase-color-btn" class="icon-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Change bookcase color" title="Change bookcase color"><i data-lucide="palette" aria-hidden="true"></i></button>
+							<div id="bookcase-color-menu" class="bookcase-color-menu" hidden></div>
+						</div>
+						<button id="reset-bookshelf-layout" class="icon-btn" type="button" aria-label="Reset bookshelf layout" title="Reset layout"><i data-lucide="rotate-ccw" aria-hidden="true"></i></button>
+					</div>
+				</div>
+				<section class="trinket-tray" aria-labelledby="trinket-tray-title">
+					<h3 id="trinket-tray-title">Trinket Collection</h3>
+					<p class="hint">Complete reading challenges to unlock trinkets for your shelf.</p>
+					<div id="trinket-tray-list" class="trinket-tray-list"></div>
+				</section>
+				<div id="bookshelf-canvas" class="bookshelf-canvas" role="group" aria-label="Draggable bookshelf"></div>
+			</div>
+		</section>
+
+		<section id="community-view" class="panel app-view" hidden>
+			<div class="grid chat-grid">
+				<article class="chat-sidebar">
+					<section class="book-clubs-panel" aria-labelledby="book-clubs-title">
+						<div class="toolbar"><h2 id="book-clubs-title" class="card-title">Book Clubs</h2><button id="open-club-dialog" class="icon-btn" type="button" aria-label="Create book club" title="Create book club"><i data-lucide="users-round" aria-hidden="true"></i></button></div>
+						<div id="book-clubs-list" class="book-clubs-list"></div>
+						<div id="club-invitations" class="club-invitations"></div>
+					</section>
+					<section class="recommendations-panel" aria-labelledby="recommendations-title">
+						<h2 id="recommendations-title" class="card-title">Recommended To You</h2>
+						<div id="recommendations-list" class="recommendations-list"></div>
+					</section>
+					<section class="activity-panel" aria-labelledby="activity-title"><h2 id="activity-title" class="card-title">Friends Activity</h2><div id="activity-list" class="activity-list"></div></section>
+					<div class="toolbar friends-heading"><h2 class="card-title">Friends</h2><button id="open-friend-dialog" class="icon-btn" type="button" aria-label="Add a friend" title="Add a friend"><i data-lucide="user-plus" aria-hidden="true"></i></button></div>
+					<p class="hint">Send a request by email. Profiles and private chat open after you both add each other.</p>
+					<div id="friends-list" class="friends-list"></div>
+				</article>
+
+				<article class="chat-room">
+					<section id="friend-profile" class="friend-profile" aria-live="polite"></section>
+					<h2 class="card-title">Chat Room</h2>
+					<p id="chat-room-title" class="hint">Choose a friend to start chatting.</p>
+					<div id="chat-messages" class="chat-messages"></div>
+					<form id="chat-form" class="chat-form">
+						<div class="field full">
+							<label for="chat-text">Message</label>
+							<textarea id="chat-text" name="text" rows="3" placeholder="Write something friendly..."></textarea>
+						</div>
+						<div class="btn-row">
+							<button class="btn-main" type="submit">Send</button>
+						</div>
+						<p id="chat-status" class="hint">Pick a friend before sending a message.</p>
+					</form>
+				</article>
+			</div>
+		</section>
+	</main>
+
+	<dialog id="friend-dialog" class="app-dialog compact-dialog">
+		<div class="dialog-heading">
+			<h2>Add a Friend</h2>
+			<button class="icon-btn" type="button" data-close-dialog="friend-dialog" aria-label="Close add friend dialog" title="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+		</div>
+		<form id="friend-form" class="auth-card friend-form">
+			<div class="field full">
+						<label for="friend-email">Email or username</label>
+						<input id="friend-email" name="email" type="text" placeholder="friend@example.com or username" required>
+			</div>
+			<div class="btn-row">
+				<button class="btn-main" type="submit">Send Request</button>
+				<button class="btn-sub" type="button" data-close-dialog="friend-dialog">Cancel</button>
+			</div>
+			<p id="friend-status" class="hint">Enter their email to send a friend request.</p>
+		</form>
+	</dialog>
+
+	<dialog id="settings-dialog" class="app-dialog">
+		<div class="dialog-heading">
+			<h2>Profile Settings</h2>
+			<button class="icon-btn" type="button" data-close-dialog="settings-dialog" aria-label="Close profile settings" title="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+		</div>
+		<form id="settings-form" class="auth-card settings-card">
+			<div class="field">
+				<label for="settings-username">Username</label>
+				<input id="settings-username" name="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" required>
+			</div>
+			<div class="field">
+				<label for="settings-email">Email</label>
+				<input id="settings-email" name="email" type="email" required>
+			</div>
+			<div class="field">
+				<label for="settings-password">New Password</label>
+				<input id="settings-password" name="password" type="password" minlength="8" placeholder="Leave blank to keep current password">
+			</div>
+			<div class="field">
+				<label for="settings-avatar">Profile picture</label>
+				<div class="file-picker-row">
+					<input id="settings-avatar" class="visually-hidden-file" name="avatar" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
+					<label class="icon-btn file-picker" for="settings-avatar" title="Choose profile picture" aria-label="Choose profile picture"><i data-lucide="image-up" aria-hidden="true"></i></label>
+					<span id="settings-avatar-name" class="file-name">No image selected</span>
+				</div>
+			</div>
+			<div class="field full">
+				<div class="checkbox-row"><input id="weekly-summary-enabled" name="weeklySummaryEnabled" type="checkbox"><label for="weekly-summary-enabled">Email me a weekly reading summary</label></div>
+				<div class="checkbox-row"><input id="reading-reminders-enabled" name="readingRemindersEnabled" type="checkbox"><label for="reading-reminders-enabled">Email me reading reminders</label></div>
+				<div class="checkbox-row"><input id="profile-books-visible" name="profileBooksVisible" type="checkbox"><label for="profile-books-visible">Let friends see my bookshelf</label></div>
+				<div class="checkbox-row"><input id="profile-activity-visible" name="profileActivityVisible" type="checkbox"><label for="profile-activity-visible">Let friends see my reading activity</label></div>
+			</div>
+			<div class="btn-row">
+				<button class="btn-main" id="save-settings" type="submit">Save Settings</button>
+			</div>
+			<p id="settings-status" class="hint">Update your account details here.</p>
+		</form>
+		<details class="library-export">
+			<summary>Library Backup</summary>
+			<div class="library-export-body">
+			<div class="btn-row">
+				<button id="download-json" class="btn-sub" type="button">Download JSON</button>
+				<button id="download-csv" class="btn-sub" type="button">Download CSV</button>
+			</div>
+			<div class="field import-library-field">
+				<label for="library-import-file">Restore a JSON or CSV backup</label>
+				<div class="file-picker-row">
+					<input id="library-import-file" class="visually-hidden-file" type="file" accept="application/json,.json,text/csv,.csv">
+					<label class="icon-btn file-picker" for="library-import-file" title="Choose library backup" aria-label="Choose library backup"><i data-lucide="file-up" aria-hidden="true"></i></label>
+					<span id="library-import-file-name" class="file-name">No backup selected</span>
+				</div>
+			</div>
+			<button id="import-library" class="btn-sub" type="button" disabled>Import Library</button>
+			</div>
+		</details>
+		<button id="open-delete-account-dialog" class="remove delete-account-btn" type="button">Delete account</button>
+	</dialog>
+	<dialog id="delete-account-dialog" class="app-dialog compact-dialog">
+		<div class="dialog-heading">
+			<h2>Delete Account</h2>
+			<button class="icon-btn" type="button" data-close-dialog="delete-account-dialog" aria-label="Close delete account dialog" title="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+		</div>
+		<p class="hint">This permanently deletes your account, books, messages, clubs, and reading data.</p>
+		<div class="field"><label for="delete-account-confirmation">Type DELETE to confirm</label><input id="delete-account-confirmation" autocomplete="off"></div>
+		<div class="btn-row"><button id="confirm-delete-account" class="remove" type="button" disabled>Delete account</button><button class="btn-sub" type="button" data-close-dialog="delete-account-dialog">Cancel</button></div>
+	</dialog>
+	<dialog id="book-details-dialog" class="app-dialog compact-dialog">
+		<div class="dialog-heading"><h2 id="book-details-title">Book Details</h2><button class="icon-btn" type="button" data-close-dialog="book-details-dialog" aria-label="Close book details" title="Close"><i data-lucide="x" aria-hidden="true"></i></button></div>
+		<div id="book-details-content" class="book-details-content"></div>
+	</dialog>
+
+	<dialog id="search-book-dialog" class="app-dialog">
+		<div class="dialog-heading">
+			<h2 id="selected-book-title">Add Book</h2>
+			<button class="icon-btn" type="button" data-close-dialog="search-book-dialog" aria-label="Close add book dialog" title="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+		</div>
+		<p id="selected-book-meta" class="hint"></p>
+		<p id="duplicate-book-notice" class="duplicate-book-notice" hidden></p>
+		<form id="search-book-form" class="auth-card">
+			<fieldset class="shelf-status-field">
+				<legend>Do you want this, own this, or have you finished it?</legend>
+				<div class="radio-row"><input id="search-book-status-want" name="shelfStatus" type="radio" value="want" checked><label for="search-book-status-want">I want to read this</label></div>
+				<div class="radio-row"><input id="search-book-status-own" name="shelfStatus" type="radio" value="own"><label for="search-book-status-own">I own this</label></div>
+				<div class="radio-row"><input id="search-book-status-finished" name="shelfStatus" type="radio" value="finished"><label for="search-book-status-finished">I've finished this</label></div>
+			</fieldset>
+			<div id="search-book-reading-fields" class="reading-fields" hidden>
+				<div class="field">
+					<label for="search-book-started-at">Started on</label>
+					<input id="search-book-started-at" name="startedAt" type="date">
+				</div>
+				<div id="search-book-finished-at-field" class="field" hidden>
+					<label for="search-book-finished-at">Finished on</label>
+					<input id="search-book-finished-at" name="finishedAt" type="date">
+				</div>
+				<div class="field">
+					<label for="search-book-page-count">Total pages (optional)</label>
+					<input id="search-book-page-count" name="pageCount" type="number" min="0" max="100000" placeholder="320">
+				</div>
+				<div id="search-book-current-page-field" class="field">
+					<label for="search-book-current-page">Current page (optional)</label>
+					<input id="search-book-current-page" name="currentPage" type="number" min="0" max="100000" placeholder="0">
+				</div>
+				<div id="search-book-rating-field" class="field" hidden>
+					<label for="search-book-rating">Rating (1-5)</label>
+					<input id="search-book-rating" name="rating" type="number" step="0.25" min="1" max="5" value="2.5">
+				</div>
+			</div>
+			<div class="field">
+				<label for="search-book-series-name">Series name</label>
+				<input id="search-book-series-name" name="seriesName" value="">
+			</div>
+			<div class="field">
+				<label for="search-book-series-position">Book number in series</label>
+				<input id="search-book-series-position" name="seriesPosition" type="number" min="0" max="9999" value="">
+			</div>
+			<div class="btn-row">
+				<button id="save-search-book" class="btn-main" type="submit">Add To Shelf</button>
+				<button id="add-duplicate-book" class="btn-sub" type="button" hidden>Add Another Copy</button>
+				<button class="btn-sub" type="button" data-close-dialog="search-book-dialog">Cancel</button>
+			</div>
+			<p id="search-book-status" class="hint"></p>
+		</form>
+	</dialog>
+	<dialog id="recommendation-info-dialog" class="app-dialog compact-dialog">
+		<div class="dialog-heading">
+			<h2 id="recommendation-info-title">Book details</h2>
+			<button class="icon-btn" type="button" data-close-dialog="recommendation-info-dialog" aria-label="Close book details" title="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+		</div>
+		<p id="recommendation-info-meta" class="hint"></p>
+		<p id="recommendation-info-rating" class="recommendation-rating"></p>
+		<p id="recommendation-info-blurb" class="recommendation-blurb"></p>
+	</dialog>
+	<dialog id="metadata-picker-dialog" class="app-dialog compact-dialog">
+		<div class="dialog-heading">
+			<h2 id="metadata-picker-title">Find replacement</h2>
+			<button class="icon-btn" type="button" data-close-dialog="metadata-picker-dialog" aria-label="Close replacement picker" title="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+		</div>
+		<p id="metadata-picker-status" class="hint"></p>
+		<div id="metadata-picker-results" class="metadata-picker-results"></div>
+	</dialog>
+	<dialog id="finish-rating-dialog" class="app-dialog compact-dialog">
+		<div class="dialog-heading">
+			<h2>Rate Finished Book</h2>
+			<button class="icon-btn" type="button" data-close-dialog="finish-rating-dialog" aria-label="Close rating dialog" title="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+		</div>
+		<p id="finish-rating-title" class="hint"></p>
+		<form id="finish-rating-form" class="auth-card">
+			<div class="field"><label for="finish-rating">Your rating (1-5)</label><input id="finish-rating" name="rating" type="number" step="0.25" min="1" max="5" value="2.5" required></div>
+			<div class="field"><label for="finish-rating-review">Your review (optional, visible to friends)</label><textarea id="finish-rating-review" name="review" rows="4" maxlength="4000" placeholder="What did you think of this book?"></textarea></div>
+			<div class="btn-row"><button class="btn-main" type="submit">Save Rating</button><button class="btn-sub" type="button" data-close-dialog="finish-rating-dialog">Cancel</button></div>
+			<p id="finish-rating-status" class="hint"></p>
+		</form>
+	</dialog>
+
+	<dialog id="shelf-menu-dialog" class="app-dialog compact-dialog">
+		<div class="dialog-heading">
+			<h2>Shelf Options</h2>
+			<button class="icon-btn" type="button" data-close-dialog="shelf-menu-dialog" aria-label="Close shelf options" title="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+		</div>
+		<button id="open-clear-dialog" class="remove" type="button">Clear Entire Shelf</button>
+	</dialog>
+
+	<dialog id="reset-bookshelf-dialog" class="app-dialog compact-dialog">
+		<div class="dialog-heading">
+			<h2>Reset Bookshelf Layout</h2>
+			<button class="icon-btn" type="button" data-close-dialog="reset-bookshelf-dialog" aria-label="Close reset layout dialog" title="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+		</div>
+		<p class="hint">This rearranges every book and trinket back to the default grid. Your custom layout cannot be undone.</p>
+		<div class="btn-row">
+			<button id="confirm-reset-bookshelf" class="remove" type="button">Reset Layout</button>
+			<button class="btn-sub" type="button" data-close-dialog="reset-bookshelf-dialog">Cancel</button>
+		</div>
+	</dialog>
+
+	<dialog id="clear-shelf-dialog" class="app-dialog compact-dialog">
+		<div class="dialog-heading">
+			<h2>Clear Entire Shelf</h2>
+			<button class="icon-btn" type="button" data-close-dialog="clear-shelf-dialog" aria-label="Close clear shelf dialog" title="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+		</div>
+		<p class="hint">This permanently removes every book from your shelf. Type CLEAR to continue.</p>
+		<div class="field">
+			<label for="clear-shelf-confirmation">Confirmation</label>
+			<input id="clear-shelf-confirmation" type="text" autocomplete="off">
+		</div>
+		<div class="btn-row">
+			<button id="clear-all" class="remove" type="button" disabled>Clear Entire Shelf</button>
+			<button class="btn-sub" type="button" data-close-dialog="clear-shelf-dialog">Cancel</button>
+		</div>
+	</dialog>
+	<dialog id="recommend-dialog" class="app-dialog compact-dialog">
+		<div class="dialog-heading">
+			<h2>Recommend Book</h2>
+			<button class="icon-btn" type="button" data-close-dialog="recommend-dialog" aria-label="Close recommendation dialog" title="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+		</div>
+		<p id="recommend-book-title" class="hint"></p>
+		<form id="recommend-form" class="auth-card">
+			<div class="field">
+				<label for="recommend-friend">Friend</label>
+				<select id="recommend-friend" name="friendId" required></select>
+			</div>
+			<div class="field">
+				<label for="recommend-note">Note (optional)</label>
+				<textarea id="recommend-note" name="note" rows="3" maxlength="500" placeholder="Why should they read it?"></textarea>
+			</div>
+			<div class="btn-row">
+				<button class="btn-main" type="submit">Send Recommendation</button>
+				<button class="btn-sub" type="button" data-close-dialog="recommend-dialog">Cancel</button>
+			</div>
+			<p id="recommend-status" class="hint"></p>
+		</form>
+	</dialog>
+	<dialog id="book-club-dialog" class="app-dialog">
+		<div class="dialog-heading">
+			<h2>Create Book Club</h2>
+			<button class="icon-btn" type="button" data-close-dialog="book-club-dialog" aria-label="Close book club dialog" title="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+		</div>
+		<form id="book-club-form" class="auth-card">
+			<div class="field"><label for="club-name">Club name</label><input id="club-name" name="name" required maxlength="80" placeholder="Saturday Readers"></div>
+			<fieldset class="club-members-field"><legend>Invite friends</legend><div id="club-member-options" class="club-member-options"></div></fieldset>
+			<div class="btn-row"><button class="btn-main" type="submit">Create Club</button><button class="btn-sub" type="button" data-close-dialog="book-club-dialog">Cancel</button></div>
+			<p id="book-club-status" class="hint"></p>
+		</form>
+	</dialog>
+	<dialog id="club-workspace-dialog" class="app-dialog club-workspace-dialog">
+		<div class="dialog-heading"><h2 id="club-workspace-title">Book Club</h2><button class="icon-btn" type="button" data-close-dialog="club-workspace-dialog" aria-label="Close club workspace" title="Close"><i data-lucide="x" aria-hidden="true"></i></button></div>
+		<div id="club-workspace-content" class="club-workspace-content"></div>
+	</dialog>
+	<div id="app-notice" class="app-notice" role="status" aria-live="polite"></div>
+
+	<script type="module" src="app.js?v=20260902-auth1"></script>
+</body>
+</html>

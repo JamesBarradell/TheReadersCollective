@@ -1,0 +1,24 @@
+{
+  "name": "the-readers-corner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Readers Collective with backend auth and synced books",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.6.2",
+    "google-auth-library": "^11.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.2.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.2.2"
+  }
+}

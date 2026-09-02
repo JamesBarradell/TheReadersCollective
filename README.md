@@ -1,0 +1,80 @@
+# The Readers Collective
+
+This project now includes a real backend API for authentication and synced book data.
+
+## Stack
+
+- Frontend: static HTML/CSS/JS
+- Backend: Node.js + Express
+- Auth: JWT + bcrypt password hashing, with optional Google sign-in
+- Persistence: SQLite database at `data/readers-corner.db` (imports existing `data/db.json` automatically on first launch)
+
+## Run locally
+
+1. Install Node.js 18+.
+2. Install dependencies:
+
+   npm install
+
+3. Start server:
+
+   npm start
+
+4. Open:
+
+   http://localhost:3000
+
+The frontend is served by the backend, and API routes are available under `/api`.
+
+## Google sign-in setup
+
+1. Create an OAuth 2.0 Web Client ID in Google Cloud Console.
+2. Add `http://localhost:3000` to the client ID's Authorized JavaScript origins.
+3. Start the server with the client ID:
+
+   $env:GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"; npm start
+
+Without `GOOGLE_CLIENT_ID`, the login page shows a setup message instead of the Google button.
+
+## Password recovery setup
+
+Password recovery sends one-time, one-hour links through Resend. Configure these environment variables before deploying:
+
+```powershell
+$env:RESEND_API_KEY="re_..."
+$env:RESEND_FROM_EMAIL="Readers Collective <noreply@your-verified-domain.com>"
+$env:APP_BASE_URL="https://your-app.example"
+npm start
+```
+
+`RESEND_FROM_EMAIL` must use a domain verified in Resend. Without both Resend variables, the reset request page clearly reports that password recovery has not been configured.
+
+## API summary
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/password-reset/request`
+- `POST /api/auth/password-reset/complete`
+- `GET /api/auth/google/config`
+- `POST /api/auth/google`
+- `GET /api/auth/me`
+- `PUT /api/auth/me`
+- `GET /api/books`
+- `POST /api/books`
+- `PUT /api/books/:id`
+- `DELETE /api/books/:id`
+- `DELETE /api/books`
+
+All routes except register/login require `Authorization: Bearer <token>`.
+
+## Production notes
+
+- Set a strong `JWT_SECRET` as an environment variable. The server refuses to start in production without it.
+- Set `CORS_ORIGIN` to your deployed frontend origin instead of allowing all origins.
+- The API applies request-size limits, rate limits, strict input constraints, and invalidates earlier tokens after a password change.
+- For multi-device sync, deploy this backend to a shared host and point the frontend to that API.
+- For high scale or multiple server instances, move from the local SQLite file to managed PostgreSQL.
+
+## Tests
+
+Run `npm test` to execute API integration tests against an isolated temporary SQLite database.
