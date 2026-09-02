@@ -1,9 +1,15 @@
 export const AUTH_TOKEN_STORAGE_KEY = "readers-corner-auth-token";
 export const SESSION_AUTH_TOKEN_STORAGE_KEY = "readers-corner-session-auth-token";
 export const AUTH_MESSAGE_STORAGE_KEY = "readers-corner-auth-message";
-export const API_BASE = window.location.protocol === "file:"
-	? "http://localhost:3000/api"
-	: `${window.location.origin}/api`;
+export const API_BASE = (() => {
+	const configuredBase = String(window.READERS_COLLECTIVE_API_BASE || "").trim().replace(/\/+$/, "");
+	if (configuredBase) {
+		return configuredBase.endsWith("/api") ? configuredBase : `${configuredBase}/api`;
+	}
+	return window.location.protocol === "file:"
+		? "http://localhost:3000/api"
+		: `${window.location.origin}/api`;
+})();
 export const SITE_BASE = window.location.protocol === "file:"
 	? "http://localhost:3000"
 	: window.location.origin;
@@ -363,7 +369,9 @@ export async function apiRequest(path, options = {}) {
 	if (!response.ok) {
 		const message = payload && payload.message
 			? payload.message
-			: `Request failed (${response.status})`;
+			: response.status === 404
+				? `Backend API route not found at ${API_BASE}${path}. Deploy the Node server or set READERS_COLLECTIVE_API_BASE to your backend URL.`
+				: `Request failed (${response.status})`;
 		const error = new Error(message);
 		error.status = response.status;
 		throw error;

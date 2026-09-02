@@ -71,6 +71,13 @@ All routes except register/login require `Authorization: Bearer <token>`.
 
 - Set a strong `JWT_SECRET` as an environment variable. The server refuses to start in production without it.
 - Set `CORS_ORIGIN` to your deployed frontend origin instead of allowing all origins.
+- Squarespace and GitLab Pages can host the static frontend, but they do not run the Node/Express API. Deploy `server.js` to a Node host, then set the backend origin in `config.js`:
+
+   ```js
+   window.READERS_COLLECTIVE_API_BASE = "https://your-backend.example";
+   ```
+
+   The value can include `/api`, but it does not need to; the frontend adds it automatically.
 - The API applies request-size limits, rate limits, strict input constraints, and invalidates earlier tokens after a password change.
 - For multi-device sync, deploy this backend to a shared host and point the frontend to that API.
 - For high scale or multiple server instances, move from the local SQLite file to managed PostgreSQL.

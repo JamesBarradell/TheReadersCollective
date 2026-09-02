@@ -1,6 +1,12 @@
-const API_BASE = window.location.protocol === "file:"
-	? "http://localhost:3000/api"
-	: `${window.location.origin}/api`;
+const API_BASE = (() => {
+	const configuredBase = String(window.READERS_COLLECTIVE_API_BASE || "").trim().replace(/\/+$/, "");
+	if (configuredBase) {
+		return configuredBase.endsWith("/api") ? configuredBase : `${configuredBase}/api`;
+	}
+	return window.location.protocol === "file:"
+		? "http://localhost:3000/api"
+		: `${window.location.origin}/api`;
+})();
 const SITE_BASE = window.location.protocol === "file:"
 	? "http://localhost:3000"
 	: window.location.origin;
@@ -32,7 +38,7 @@ form.addEventListener("submit", (event) => {
 			});
 			const payload = await response.json().catch(() => null);
 			if (!response.ok) {
-				throw new Error(payload && payload.message ? payload.message : "Unable to reset password.");
+				throw new Error(payload && payload.message ? payload.message : response.status === 404 ? `Backend API route not found at ${API_BASE}/auth/password-reset/complete. Deploy the Node server or set READERS_COLLECTIVE_API_BASE to your backend URL.` : "Unable to reset password.");
 			}
 			status.textContent = "Password reset. Redirecting to sign in...";
 			window.setTimeout(() => {
