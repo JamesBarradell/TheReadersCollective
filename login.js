@@ -124,7 +124,7 @@ async function tryRestoreSession() {
 			}
 		});
 		if (response.ok) {
-			refs.authStatus.textContent = "You are already signed in. Sign in again to switch accounts.";
+			window.location.replace(APP_PAGE);
 			return;
 		}
 	} catch {
