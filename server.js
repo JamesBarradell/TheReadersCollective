@@ -220,12 +220,12 @@ async function findBookMetadataCandidates(book) {
 }
 
 app.post("/api/auth/register", authLimit, async (req, res) => {
-  const userEmail = email(req.body.email); const password = String(req.body.password || ""); const avatarUrl = clean(req.body.avatarUrl, 2000); const userId = crypto.randomUUID(); const nextUsername = username(req.body.username);
+  const userEmail = email(req.body.email); const password = String(req.body.password || ""); const avatarUrl = clean(req.body.avatarUrl, 2000); const userId = crypto.randomUUID(); const nextUsername = username(req.body.username); const readingGoal = goal(req.body.readingGoal);
   if (!isEmail(userEmail) || password.length < 8 || password.length > 128 || !isUrl(avatarUrl)) return res.status(400).json({ message: "Provide a valid email, an 8-128 character password, and an HTTPS avatar URL." });
   if (!isUsername(nextUsername)) return res.status(400).json({ message: "Username must be 3-24 letters, numbers, or underscores." });
   if (db.prepare("SELECT 1 FROM users WHERE email = ?").get(userEmail)) return res.status(409).json({ message: "Account already exists." });
   if (db.prepare("SELECT 1 FROM users WHERE username = ? COLLATE NOCASE").get(nextUsername)) return res.status(409).json({ message: "Username is already in use." });
-  db.prepare("INSERT INTO users (id, email, username, password_hash, avatar_url, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(userId, userEmail, nextUsername, await bcrypt.hash(password, 12), avatarUrl, Date.now());
+  db.prepare("INSERT INTO users (id, email, username, password_hash, avatar_url, reading_goal, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run(userId, userEmail, nextUsername, await bcrypt.hash(password, 12), avatarUrl, readingGoal, Date.now());
   const user = getUser(userId); return res.status(201).json({ token: tokenFor(user), user: userResponse(user) });
 });
 app.post("/api/auth/login", authLimit, async (req, res) => {

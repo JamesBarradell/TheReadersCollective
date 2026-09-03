@@ -19,11 +19,18 @@ const APP_PAGE = window.location.protocol === "file:"
 
 const refs = {
 	authForm: document.getElementById("auth-form"),
-	authUsername: document.getElementById("auth-username"),
 	authEmail: document.getElementById("auth-email"),
 	authPassword: document.getElementById("auth-password"),
-	authAvatar: document.getElementById("auth-avatar"),
 	rememberMe: document.getElementById("remember-me"),
+	createAccountBtn: document.getElementById("create-account-btn"),
+	createAccountDialog: document.getElementById("create-account-dialog"),
+	closeCreateAccount: document.getElementById("close-create-account"),
+	registerForm: document.getElementById("register-form"),
+	registerUsername: document.getElementById("register-username"),
+	registerEmail: document.getElementById("register-email"),
+	registerPassword: document.getElementById("register-password"),
+	registerReadingGoal: document.getElementById("register-reading-goal"),
+	registerStatus: document.getElementById("register-status"),
 	googleSignIn: document.getElementById("google-signin"),
 	googleStatus: document.getElementById("google-status"),
 	authStatus: document.getElementById("auth-status"),
@@ -201,32 +208,21 @@ async function initGoogleSignIn() {
 
 refs.authForm.addEventListener("submit", (event) => {
 	event.preventDefault();
-	const action = event.submitter ? event.submitter.value : "login";
-	const username = String(refs.authUsername.value || "").trim();
 	const email = refs.authEmail.value;
 	const password = refs.authPassword.value;
-	const avatar = refs.authAvatar ? refs.authAvatar.value : "";
 	const submitButtons = refs.authForm.querySelectorAll("button[type='submit']");
-	if (action === "register" && !/^[a-z0-9_]{3,24}$/i.test(username)) {
-		refs.authStatus.textContent = "Choose a username with 3-24 letters, numbers, or underscores.";
-		refs.authUsername.focus();
-		return;
-	}
 
 	(async () => {
 		try {
-			refs.authStatus.textContent = action === "register" ? "Creating your account..." : "Signing in...";
+			refs.authStatus.textContent = "Signing in...";
 			submitButtons.forEach((button) => {
 				button.disabled = true;
 			});
-			const endpoint = action === "register" ? "/auth/register" : "/auth/login";
-			const response = await apiRequest(endpoint, {
+			const response = await apiRequest("/auth/login", {
 				method: "POST",
 				body: JSON.stringify({
-					username: action === "register" ? username : undefined,
 					email: normalizeEmail(email),
-					password,
-					avatarUrl: avatar
+					password
 				})
 			});
 			saveAuthToken(response.token, refs.rememberMe.checked);
@@ -236,6 +232,47 @@ refs.authForm.addEventListener("submit", (event) => {
 			submitButtons.forEach((button) => {
 				button.disabled = false;
 			});
+		}
+	})();
+});
+
+refs.createAccountBtn.addEventListener("click", () => {
+	refs.registerEmail.value = refs.authEmail.value;
+	refs.registerStatus.textContent = "";
+	refs.createAccountDialog.showModal();
+	refs.registerUsername.focus();
+});
+
+refs.closeCreateAccount.addEventListener("click", () => refs.createAccountDialog.close());
+
+refs.registerForm.addEventListener("submit", (event) => {
+	event.preventDefault();
+	const username = String(refs.registerUsername.value || "").trim();
+	const submitButton = refs.registerForm.querySelector("button[type='submit']");
+	if (!/^[a-z0-9_]{3,24}$/i.test(username)) {
+		refs.registerStatus.textContent = "Choose a username with 3-24 letters, numbers, or underscores.";
+		refs.registerUsername.focus();
+		return;
+	}
+
+	(async () => {
+		try {
+			refs.registerStatus.textContent = "Creating your account...";
+			submitButton.disabled = true;
+			const response = await apiRequest("/auth/register", {
+				method: "POST",
+				body: JSON.stringify({
+					username,
+					email: normalizeEmail(refs.registerEmail.value),
+					password: refs.registerPassword.value,
+					readingGoal: Number(refs.registerReadingGoal.value)
+				})
+			});
+			saveAuthToken(response.token, refs.rememberMe.checked);
+			window.location.replace(APP_PAGE);
+		} catch (error) {
+			refs.registerStatus.textContent = error instanceof Error ? error.message : "Unable to create your account right now.";
+			submitButton.disabled = false;
 		}
 	})();
 });

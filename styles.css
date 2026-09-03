@@ -1729,6 +1729,13 @@ textarea {
 	margin-top: 0.2rem;
 }
 
+.auth-action-separator {
+	align-self: center;
+	color: var(--ink-soft);
+	font-size: 0.9rem;
+	font-weight: 700;
+}
+
 .auth-divider {
 	display: flex;
 	align-items: center;

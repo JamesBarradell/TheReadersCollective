@@ -27,11 +27,7 @@
 					<h2 class="card-title">Welcome Back</h2>
 					<div class="auth-columns auth-columns-single">
 						<form id="auth-form" class="auth-card">
-							<h3>Sign In Or Create Account</h3>
-							<div class="field">
-								<label for="auth-username">Username</label>
-								<input id="auth-username" name="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" placeholder="Needed to create an account">
-							</div>
+							<h3>Sign In</h3>
 							<div class="field">
 								<label for="auth-email">Email</label>
 								<input id="auth-email" name="email" type="email" required placeholder="reader@example.com">
@@ -45,20 +41,47 @@
 								<label for="remember-me">Remember me on this device</label>
 							</div>
 							<div class="btn-row">
-								<button class="btn-main" type="submit" name="authAction" value="login">Sign In</button>
-								<button class="btn-sub" type="submit" name="authAction" value="register">Create Account</button>
+								<button class="btn-main" type="submit">Sign In</button>
+								<span class="auth-action-separator" aria-hidden="true">or</span>
+								<button id="create-account-btn" class="btn-sub" type="button">Create Account</button>
 							</div>
 							<button id="forgot-password-btn" class="text-action" type="button">Forgot password?</button>
 							<div class="auth-divider"><span>or</span></div>
 							<div id="google-signin" class="google-signin"></div>
 							<p id="google-status" class="hint google-status"></p>
-							<p id="auth-status" class="hint">Create a new account or sign in to your existing one.</p>
+							<p id="auth-status" class="hint">Sign in to continue to your library.</p>
 						</form>
 					</div>
 				</article>
 			</div>
 		</section>
 	</main>
+	<dialog id="create-account-dialog" class="app-dialog compact-dialog">
+		<div class="dialog-heading">
+			<h2>Create Account</h2>
+			<button id="close-create-account" class="icon-btn" type="button" aria-label="Close account creation" title="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+		</div>
+		<form id="register-form" class="auth-card">
+			<div class="field">
+				<label for="register-username">Username</label>
+				<input id="register-username" name="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" autocomplete="username" placeholder="e.g. page_turner">
+			</div>
+			<div class="field">
+				<label for="register-email">Email</label>
+				<input id="register-email" name="email" type="email" required autocomplete="email" placeholder="reader@example.com">
+			</div>
+			<div class="field">
+				<label for="register-password">Password</label>
+				<input id="register-password" name="password" type="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters">
+			</div>
+			<div class="field">
+				<label for="register-reading-goal">Books to read this year</label>
+				<input id="register-reading-goal" name="readingGoal" type="number" required min="1" max="1000" value="12" inputmode="numeric">
+			</div>
+			<button class="btn-main" type="submit">Create Account</button>
+			<p id="register-status" class="hint" aria-live="polite"></p>
+		</form>
+	</dialog>
 	<dialog id="forgot-password-dialog" class="app-dialog compact-dialog">
 		<div class="dialog-heading">
 			<h2>Reset Password</h2>

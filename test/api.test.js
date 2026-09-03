@@ -31,6 +31,15 @@ test("account creation requires a username", async () => {
   await request(app).post("/api/auth/register").send({ email: "missing-username@example.com", password: "secure-test-password" }).expect(400);
 });
 
+test("account creation saves the selected yearly reading goal", async () => {
+  const response = await request(app)
+    .post("/api/auth/register")
+    .send({ email: "goal-reader@example.com", username: "goal_reader", password: "secure-test-password", readingGoal: 24 })
+    .expect(201);
+  assert.equal(response.body.user.readingGoal, 24);
+  assert.equal(db.prepare("SELECT reading_goal FROM users WHERE id = ?").get(response.body.user.id).reading_goal, 24);
+});
+
 test("api allows both production site origins", async () => {
   for (const origin of ["https://www.thereaderscollective.com", "https://thereaderscollective.com"]) {
     const response = await request(app)
