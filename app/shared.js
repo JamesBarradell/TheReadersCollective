@@ -46,7 +46,7 @@ export const GENRE_OPTIONS = [
 export const state = {
 	books: [],
 	filter: "all",
-	sort: "recent",
+	sort: "finished",
 	genreFilter: "all",
 	tagFilter: "all",
 	shelfQuery: "",
@@ -95,6 +95,8 @@ export const refs = {
 	startedAt: document.getElementById("started-at"),
 	finishedAt: document.getElementById("finished-at"),
 	coverUrl: document.getElementById("cover-url"),
+	bookCoverUpload: document.getElementById("book-cover-upload"),
+	bookCoverUploadName: document.getElementById("book-cover-upload-name"),
 	clearAll: document.getElementById("clear-all"),
 	openClearDialog: document.getElementById("open-clear-dialog"),
 	clearShelfDialog: document.getElementById("clear-shelf-dialog"),

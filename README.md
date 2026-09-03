@@ -49,6 +49,23 @@ npm start
 
 `RESEND_FROM_EMAIL` must use a domain verified in Resend. Without both Resend variables, the reset request page clearly reports that password recovery has not been configured.
 
+### Configure Resend on Render
+
+1. Create a Resend account at `https://resend.com`.
+2. In Resend, open **Domains**, add `thereaderscollective.com`, and add the DNS records that Resend provides where your domain DNS is managed. Wait until the domain shows as verified.
+3. In Resend, open **API Keys** and create a new key with **Sending access**. Copy it immediately; Resend does not show the key value again.
+4. In the Render dashboard, open the `the-readers-collective-api` service and select **Environment**. Add these variables:
+
+   ```text
+   RESEND_API_KEY=re_your_copied_key
+   RESEND_FROM_EMAIL=The Readers Collective <noreply@thereaderscollective.com>
+   ```
+
+5. Save the environment changes and let Render redeploy the API.
+6. Use **Forgot password?** with an existing account email, then check the inbox and spam folder. The link opens `https://www.thereaderscollective.com/reset.html` and expires after one hour.
+
+Keep `RESEND_API_KEY` only in Render's secret environment variables. Never add it to `config.js`, a frontend file, or the Git repository.
+
 ## API summary
 
 - `POST /api/auth/register`

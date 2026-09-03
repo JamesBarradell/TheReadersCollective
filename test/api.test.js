@@ -110,6 +110,16 @@ test("books preserve reading progress and personal reflections", async () => {
   assert.equal(response.body.book.favoriteQuote, "A reader lives a thousand lives.");
 });
 
+test("users can upload a custom book cover", async () => {
+  const account = await register("cover-upload@example.com");
+  const response = await request(app)
+    .post("/api/books/cover-upload")
+    .set("Authorization", `Bearer ${account.token}`)
+    .attach("cover", Buffer.from("test image"), "cover.png")
+    .expect(201);
+  assert.match(response.body.coverUrl, /^\/uploads\/[a-f0-9-]+\.png$/);
+});
+
 test("unfinished books cannot set or expose a rating", async () => {
   const account = await register("rating-state@example.com");
   const created = await request(app).post("/api/books").set("Authorization", `Bearer ${account.token}`).send({ title: "Not finished", rating: 5 }).expect(201);

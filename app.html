@@ -132,6 +132,14 @@
 								<input id="finished-at" name="finishedAt" type="date">
 							</div>
 							<input id="cover-url" name="coverUrl" type="hidden">
+							<div class="field full">
+								<label for="book-cover-upload">Book cover (optional)</label>
+								<div class="file-picker-row">
+									<input id="book-cover-upload" class="visually-hidden-file" name="cover" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
+									<label class="icon-btn file-picker" for="book-cover-upload" title="Choose book cover" aria-label="Choose book cover"><i data-lucide="image-up" aria-hidden="true"></i></label>
+									<span id="book-cover-upload-name" class="file-name">No image selected</span>
+								</div>
+							</div>
 
 							<div class="field full">
 								<div class="checkbox-row">
@@ -211,7 +219,7 @@
 									<select id="tag-filter" aria-label="Filter books by tag"><option value="all">All tags</option></select>
 									<select id="sort-view" aria-label="Sort books">
 										<option value="recent">Recently added</option>
-										<option value="finished">Date read (newest first)</option>
+										<option value="finished" selected>Date read (newest first)</option>
 										<option value="finished-asc">Date read (oldest first)</option>
 										<option value="title">Title</option>
 										<option value="rating">Highest rated</option>

@@ -108,7 +108,11 @@ async function sendPasswordResetEmail(recipient, token, requestBaseUrl) {
       html: `<p>Reset your Readers Collective password:</p><p><a href="${resetUrl}">Reset password</a></p><p>This link expires in one hour.</p>`
     })
   });
-  if (!response.ok) throw new Error("Email delivery failed.");
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    const message = clean(payload?.message || payload?.name || "Unknown Resend error", 500);
+    throw new Error(`Resend rejected password recovery email (${response.status}): ${message}`);
+  }
 }
 function parseCsv(text) {
   const content = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
@@ -245,8 +249,9 @@ app.post("/api/auth/password-reset/request", authLimit, async (req, res) => {
     db.prepare("INSERT INTO password_reset_tokens (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)").run(hashToken(token), user.id, expiresAt, Date.now());
     try {
       await sendPasswordResetEmail(user.email, token, `${req.protocol}://${req.get("host")}`);
-    } catch {
+    } catch (error) {
       db.prepare("DELETE FROM password_reset_tokens WHERE token_hash = ?").run(hashToken(token));
+      console.error("Password recovery email failed:", error instanceof Error ? error.message : error);
       return res.status(502).json({ message: "Unable to send a password recovery email right now." });
     }
   }
@@ -354,6 +359,10 @@ app.post("/api/library/import", authRequired, writeLimit, libraryImport.single("
   return res.json({ imported, skipped });
 });
 app.post("/api/books", authRequired, writeLimit, (req, res) => { const book = sanitizeBook(req.body); if (!book.title) return res.status(400).json({ message: "Book title is required." }); const id = crypto.randomUUID(); db.prepare("INSERT INTO books (id,user_id,title,author,genre,rating,year,is_owned,started_at,finished_at,did_not_finish,cover_url,page_count,current_page,notes,favorite_quote,review,tags,recommended_by,series_name,series_position,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").run(id, req.authUser.id, book.title, book.author, book.genre, book.rating, book.year, Number(book.isOwned), book.startedAt, book.finishedAt, Number(book.didNotFinish), book.coverUrl, book.pageCount, book.currentPage, book.notes, book.favoriteQuote, book.review, JSON.stringify(book.tags), book.recommendedBy, book.seriesName, book.seriesPosition, Date.now()); logActivity(req.authUser.id, "added", id, book.title); return res.status(201).json({ book: bookResponse(db.prepare("SELECT * FROM books WHERE id = ?").get(id)) }); });
+app.post("/api/books/cover-upload", authRequired, writeLimit, avatarUpload.single("cover"), (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "Choose a JPG, PNG, WebP, or GIF image up to 5 MB." });
+  return res.status(201).json({ coverUrl: `/uploads/${req.file.filename}` });
+});
 app.post("/api/books/:id/cover", authRequired, writeLimit, async (req, res) => { const book = db.prepare("SELECT * FROM books WHERE id = ? AND user_id = ?").get(req.params.id, req.authUser.id); if (!book) return res.status(404).json({ message: "Book not found." }); if (!book.cover_url || /(?:goodreads|gr-assets)\.com/i.test(book.cover_url)) { const coverUrl = await findBookCoverUrl(book); if (coverUrl) db.prepare("UPDATE books SET cover_url = ? WHERE id = ?").run(coverUrl, book.id); } return res.json({ book: bookResponse(db.prepare("SELECT * FROM books WHERE id = ?").get(book.id)) }); });
 app.post("/api/books/:id/metadata", authRequired, writeLimit, async (req, res) => {
   const book = db.prepare("SELECT * FROM books WHERE id = ? AND user_id = ?").get(req.params.id, req.authUser.id);

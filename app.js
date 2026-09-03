@@ -1041,6 +1041,16 @@ refs.form.addEventListener("submit", (event) => {
 
 	(async () => {
 		try {
+			const coverFile = refs.bookCoverUpload.files?.[0];
+			if (coverFile) {
+				const upload = new FormData();
+				upload.append("cover", coverFile);
+				const uploadResponse = await apiRequest("/books/cover-upload", {
+					method: "POST",
+					body: upload
+				});
+				book.coverUrl = uploadResponse.coverUrl;
+			}
 			const response = await apiRequest("/books", {
 				method: "POST",
 				body: JSON.stringify(book)
@@ -1053,6 +1063,10 @@ refs.form.addEventListener("submit", (event) => {
 			refs.searchStatus.textContent = error instanceof Error ? error.message : "Unable to save book right now.";
 		}
 	})();
+});
+
+refs.bookCoverUpload.addEventListener("change", () => {
+	refs.bookCoverUploadName.textContent = refs.bookCoverUpload.files?.[0]?.name || "No image selected";
 });
 
 refs.isRead.addEventListener("change", () => {

@@ -487,24 +487,21 @@ function renderInsights(yearReadBooks, currentYear) {
 		: yearReadBooks;
 
 	const completedGenres = new Map();
-	const ratings = new Map();
 	let pagesRead = 0;
 	for (const book of scopedBooks) {
 		const genre = book.genre || "Uncategorized";
 		completedGenres.set(genre, (completedGenres.get(genre) || 0) + 1);
-		if (book.genre) {
-			const entry = ratings.get(book.genre) || [0, 0];
-			ratings.set(book.genre, [entry[0] + Number(book.rating || 0), entry[1] + 1]);
-		}
 		pagesRead += Number(book.pageCount || 0);
 	}
 	const booksWithPages = scopedBooks.filter((book) => Number(book.pageCount) > 0);
+	const averageRating = scopedBooks.length
+		? scopedBooks.reduce((total, book) => total + Number(book.rating || 0), 0) / scopedBooks.length
+		: 0;
 	const averagePages = booksWithPages.length
 		? Math.round(booksWithPages.reduce((total, book) => total + Number(book.pageCount), 0) / booksWithPages.length)
 		: 0;
 	const topGenre = [...completedGenres.entries()].sort((left, right) => right[1] - left[1])[0];
-	const bestRated = [...ratings.entries()].map(([genre, value]) => [genre, value[0] / value[1]]).sort((left, right) => right[1] - left[1])[0];
-	refs.insightsList.innerHTML = `<div><span>Most read genre</span><strong>${escapeHtml(topGenre ? topGenre[0] : "-")}</strong></div><div><span>Best rated genre</span><strong>${escapeHtml(bestRated ? `${bestRated[0]} (${bestRated[1].toFixed(2)})` : "-")}</strong></div><div><span>Pages read</span><strong>${pagesRead}</strong></div><div><span>Average pages per finished book</span><strong>${averagePages || "-"}</strong></div>`;
+	refs.insightsList.innerHTML = `<div><span>Most read genre</span><strong>${escapeHtml(topGenre ? topGenre[0] : "-")}</strong></div><div><span>Average rating</span><strong>${averageRating ? averageRating.toFixed(2) : "-"}</strong></div><div><span>Pages read</span><strong>${pagesRead}</strong></div><div><span>Average pages per finished book</span><strong>${averagePages || "-"}</strong></div>`;
 
 	if (refs.insightsScope) {
 		if (scope) {
@@ -661,6 +658,8 @@ export function resetBookForm() {
 	refs.finishedAt.value = "";
 	refs.startedAt.value = "";
 	refs.coverUrl.value = "";
+	refs.bookCoverUpload.value = "";
+	refs.bookCoverUploadName.textContent = "No image selected";
 }
 
 export function toBook(formData, existingBook) {
