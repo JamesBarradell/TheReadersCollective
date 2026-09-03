@@ -382,32 +382,33 @@ async function addMissingBookCovers() {
 		}));
 		updatedBooks.push(...updatedBatch);
 
-	refs.openDeleteAccountDialog.addEventListener("click", () => {
-		refs.deleteAccountConfirmation.value = "";
-		refs.confirmDeleteAccount.disabled = true;
-		refs.deleteAccountDialog.showModal();
-	});
-
-	refs.deleteAccountConfirmation.addEventListener("input", () => {
-		refs.confirmDeleteAccount.disabled = refs.deleteAccountConfirmation.value.trim() !== "DELETE";
-	});
-
-	refs.confirmDeleteAccount.addEventListener("click", async () => {
-		if (!state.currentUser || refs.deleteAccountConfirmation.value.trim() !== "DELETE") return;
-		refs.confirmDeleteAccount.disabled = true;
-		try {
-			await apiRequest("/auth/me", { method: "DELETE" });
-			refs.deleteAccountDialog.close();
-			clearSession("Your account has been deleted.");
-		} catch (error) {
-			refs.confirmDeleteAccount.disabled = false;
-			refs.deleteAccountConfirmation.value = "";
-			refs.settingsStatus.textContent = error instanceof Error ? error.message : "Unable to delete your account right now.";
-		}
-	});
 	}
 
 	for (const updatedBook of updatedBooks) {
+
+refs.openDeleteAccountDialog.addEventListener("click", () => {
+	refs.deleteAccountConfirmation.value = "";
+	refs.confirmDeleteAccount.disabled = true;
+	refs.deleteAccountDialog.showModal();
+});
+
+refs.deleteAccountConfirmation.addEventListener("input", () => {
+	refs.confirmDeleteAccount.disabled = refs.deleteAccountConfirmation.value.trim() !== "DELETE";
+});
+
+refs.confirmDeleteAccount.addEventListener("click", async () => {
+	if (!state.currentUser || refs.deleteAccountConfirmation.value.trim() !== "DELETE") return;
+	refs.confirmDeleteAccount.disabled = true;
+	try {
+		await apiRequest("/auth/me", { method: "DELETE" });
+		refs.deleteAccountDialog.close();
+		clearSession("Your account has been deleted.");
+	} catch (error) {
+		refs.confirmDeleteAccount.disabled = false;
+		refs.deleteAccountConfirmation.value = "";
+		refs.settingsStatus.textContent = error instanceof Error ? error.message : "Unable to delete your account right now.";
+	}
+});
 		if (!updatedBook) {
 			continue;
 		}
