@@ -31,11 +31,16 @@ form.addEventListener("submit", (event) => {
 	(async () => {
 		try {
 			status.textContent = "Resetting password...";
-			const response = await fetch(`${API_BASE}/auth/password-reset/complete`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ token, password: password.value })
-			});
+			let response;
+			try {
+				response = await fetch(`${API_BASE}/auth/password-reset/complete`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ token, password: password.value })
+				});
+			} catch {
+				throw new Error(`Unable to reach the backend at ${API_BASE}. Check the connection, turn off VPN/private relay temporarily, or try again after the server wakes up.`);
+			}
 			const payload = await response.json().catch(() => null);
 			if (!response.ok) {
 				throw new Error(payload && payload.message ? payload.message : response.status === 404 ? `Backend API route not found at ${API_BASE}/auth/password-reset/complete. Deploy the Node server or set READERS_COLLECTIVE_API_BASE to your backend URL.` : "Unable to reset password.");

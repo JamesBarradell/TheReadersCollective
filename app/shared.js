@@ -351,10 +351,15 @@ export async function apiRequest(path, options = {}) {
 		headers.Authorization = `Bearer ${state.authToken}`;
 	}
 
-	const response = await fetch(`${API_BASE}${path}`, {
-		...options,
-		headers
-	});
+	let response;
+	try {
+		response = await fetch(`${API_BASE}${path}`, {
+			...options,
+			headers
+		});
+	} catch {
+		throw new Error(`Unable to reach the backend at ${API_BASE}. Check the connection, turn off VPN/private relay temporarily, or try again after the server wakes up.`);
+	}
 
 	let payload = null;
 	const text = await response.text();
