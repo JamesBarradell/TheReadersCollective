@@ -72,6 +72,7 @@ All routes except register/login require `Authorization: Bearer <token>`.
 - Set a strong `JWT_SECRET` as an environment variable. The server refuses to start in production without it.
 - Set `CORS_ORIGIN` to your deployed frontend origin instead of allowing all origins.
 - This backend uses Node's built-in SQLite module, so deploy it with Node 24.x.
+- The SQLite database and uploaded avatars must be stored on durable storage in production. A free Render web service has an ephemeral filesystem, so its user accounts, friendships, and books are erased when the service restarts or redeploys. The included Render Blueprint attaches a 1 GB persistent disk and therefore uses Render's paid `0.5c-512mb` web-service plan.
 - Squarespace and GitLab Pages can host the static frontend, but they do not run the Node/Express API. Deploy `server.js` to a Node host, then set the backend origin in `config.js`:
 
    ```js
@@ -92,7 +93,7 @@ This repo includes `render.yaml` for deploying the Node API to Render.
 3. Choose **New +** and then **Blueprint**.
 4. Connect your GitLab account if Render asks for access.
 5. Select this repository. Render should detect `render.yaml` automatically.
-6. On the environment variable screen, set `JWT_SECRET` to a long random value.
+6. On the environment variable screen, set `JWT_SECRET` to a long random value. The Blueprint provisions a 1 GB persistent disk at `/var/data` and configures the API to store its database and uploads there.
 7. Set `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`, and `RESEND_FROM_EMAIL` if you use Google sign-in or password reset.
 8. Choose **Apply** or **Deploy** and wait for the service to finish building.
 9. Copy the service URL, for example `https://the-readers-collective-api.onrender.com`.
@@ -115,7 +116,11 @@ NODE_ENV: production
 CORS_ORIGIN: https://www.thereaderscollective.com,https://thereaderscollective.com
 APP_BASE_URL: https://www.thereaderscollective.com
 JWT_SECRET: a long random secret value
+READERS_CORNER_DATA_DIR: /var/data/database
+READERS_COLLECTIVE_UPLOADS_DIR: /var/data/uploads
 ```
+
+For a manually created Render service, use the paid `0.5c-512mb` plan or higher, then add a 1 GB persistent disk mounted at `/var/data`. Render does not support persistent disks on its free web-service plan. Existing data on the free service cannot be recovered after a restart; create or import it again after the first persistent deployment.
 
 ## Tests
 

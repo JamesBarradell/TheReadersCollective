@@ -2,9 +2,13 @@ services:
   - type: web
     name: the-readers-collective-api
     runtime: node
-    plan: free
+    plan: 0.5c-512mb
     buildCommand: npm install
     startCommand: npm start
+    disk:
+      name: readers-collective-data
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
       - key: NODE_VERSION
         value: 24.18.0
@@ -22,3 +26,7 @@ services:
         sync: false
       - key: APP_BASE_URL
         value: https://www.thereaderscollective.com
+      - key: READERS_CORNER_DATA_DIR
+        value: /var/data/database
+      - key: READERS_COLLECTIVE_UPLOADS_DIR
+        value: /var/data/uploads

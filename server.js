@@ -18,7 +18,7 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "";
 const APP_BASE_URL = process.env.APP_BASE_URL || "";
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
-const UPLOADS_DIR = path.join(__dirname, "uploads");
+const UPLOADS_DIR = process.env.READERS_COLLECTIVE_UPLOADS_DIR || path.join(__dirname, "uploads");
 if (!JWT_SECRET) throw new Error("JWT_SECRET must be configured when NODE_ENV=production.");
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
