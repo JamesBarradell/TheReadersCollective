@@ -1,4 +1,4 @@
-import { API_BASE, getAvatarUrl, loadAuthToken, state, escapeHtml, capitalizeGenreLabel } from "./app/shared.js";
+import { API_BASE, getAvatarUrl, getUploadedAssetUrl, loadAuthToken, state, escapeHtml, capitalizeGenreLabel } from "./app/shared.js";
 
 const content = document.getElementById("reader-profile-content");
 
@@ -22,7 +22,7 @@ function renderBook(book, isSelf) {
 	const status = book.finishedAt ? "Finished" : book.startedAt ? "Reading" : "On shelf";
 	return `
 		<article class="reader-profile-book">
-			${book.coverUrl ? `<img src="${escapeHtml(book.coverUrl)}" alt="Cover of ${escapeHtml(book.title)}">` : '<div class="reader-profile-cover placeholder" aria-hidden="true">Book</div>'}
+			${book.coverUrl ? `<img src="${escapeHtml(getUploadedAssetUrl(book.coverUrl))}" alt="Cover of ${escapeHtml(book.title)}">` : '<div class="reader-profile-cover placeholder" aria-hidden="true">Book</div>'}
 			<div>
 				<h3>${escapeHtml(book.title)}</h3>
 				<p>${escapeHtml(book.author || "Unknown author")}</p>

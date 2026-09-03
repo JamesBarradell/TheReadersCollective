@@ -8,6 +8,7 @@ import {
 	friendLabel,
 	formatChatTime,
 	getAvatarUrl,
+	getUploadedAssetUrl,
 	avatarPlaceholder,
 	SITE_BASE,
 	LOGIN_PAGE
@@ -192,7 +193,7 @@ function bookCard(book) {
 
 	return `
 		<article class="book" data-id="${book.id}">
-			${book.coverUrl ? `<img class="book-cover" src="${escapeHtml(book.coverUrl)}" alt="Cover of ${escapeHtml(book.title)}">` : '<div class="book-cover placeholder" aria-hidden="true">Book</div>'}
+			${book.coverUrl ? `<img class="book-cover" src="${escapeHtml(getUploadedAssetUrl(book.coverUrl))}" alt="Cover of ${escapeHtml(book.title)}">` : '<div class="book-cover placeholder" aria-hidden="true">Book</div>'}
 			<div>
 				<h3>${escapeHtml(book.title)}</h3>
 				<p>${escapeHtml(author)}</p>
@@ -425,7 +426,7 @@ export function renderFriendProfile(profile) {
 			<div><h2>${escapeHtml(profile.username || profile.email)}</h2><p>${escapeHtml(profile.email)} · ${completed} of ${goal} books finished this year</p></div>
 		</div>
 		<div class="friend-goal-bar" aria-label="${percentage}% of annual reading goal"><div style="width: ${percentage}%"></div></div>
-		${currentBook ? `<section class="friend-reading"><h3>Currently Reading</h3><div class="friend-book-card">${currentBook.coverUrl ? `<img src="${escapeHtml(currentBook.coverUrl)}" alt="Cover of ${escapeHtml(currentBook.title)}">` : ""}<p><strong>${escapeHtml(currentBook.title)}</strong>${currentBook.author ? `<span>by ${escapeHtml(currentBook.author)}</span>` : ""}${Number(currentBook.pageCount) ? `<span>${Number(currentBook.currentPage || 0)} of ${Number(currentBook.pageCount)} pages</span>` : ""}</p>${bookLikeButton(currentBook)}</div></section>` : ""}
+		${currentBook ? `<section class="friend-reading"><h3>Currently Reading</h3><div class="friend-book-card">${currentBook.coverUrl ? `<img src="${escapeHtml(getUploadedAssetUrl(currentBook.coverUrl))}" alt="Cover of ${escapeHtml(currentBook.title)}">` : ""}<p><strong>${escapeHtml(currentBook.title)}</strong>${currentBook.author ? `<span>by ${escapeHtml(currentBook.author)}</span>` : ""}${Number(currentBook.pageCount) ? `<span>${Number(currentBook.currentPage || 0)} of ${Number(currentBook.pageCount)} pages</span>` : ""}</p>${bookLikeButton(currentBook)}</div></section>` : ""}
 		${finishes.length ? `<section class="friend-finishes"><h3>Recently Finished</h3><ul>${finishes.map((book) => `<li class="friend-book-card"><strong>${escapeHtml(book.title)}</strong>${book.author ? ` by ${escapeHtml(book.author)}` : ""}${book.review ? `<p class="friend-review">${escapeHtml(book.review)}</p>` : ""}${bookLikeButton(book)}</li>`).join("")}</ul></section>` : ""}
 	`;
 	if (window.lucide) {
@@ -597,7 +598,7 @@ export function renderNowReading() {
 		const progress = pageCount ? Math.round((currentPage / pageCount) * 100) : 0;
 		return `
 			<article class="now-reading-card" data-id="${book.id}">
-				${book.coverUrl ? `<img class="now-reading-cover" src="${escapeHtml(book.coverUrl)}" alt="Cover of ${escapeHtml(book.title)}">` : '<div class="now-reading-cover placeholder" aria-hidden="true">Book</div>'}
+				${book.coverUrl ? `<img class="now-reading-cover" src="${escapeHtml(getUploadedAssetUrl(book.coverUrl))}" alt="Cover of ${escapeHtml(book.title)}">` : '<div class="now-reading-cover placeholder" aria-hidden="true">Book</div>'}
 				<div>
 					<h3>${escapeHtml(book.title)}</h3>
 					<p>${escapeHtml(book.author ? `by ${book.author}` : "No author added")}</p>
@@ -628,7 +629,7 @@ export function renderWishlist() {
 
 	refs.wishlistList.innerHTML = wishlistBooks.map((book) => `
 		<article class="wishlist-card" data-id="${book.id}">
-			${book.coverUrl ? `<img src="${escapeHtml(book.coverUrl)}" alt="Cover of ${escapeHtml(book.title)}">` : '<div class="wishlist-cover placeholder" aria-hidden="true">Book</div>'}
+			${book.coverUrl ? `<img src="${escapeHtml(getUploadedAssetUrl(book.coverUrl))}" alt="Cover of ${escapeHtml(book.title)}">` : '<div class="wishlist-cover placeholder" aria-hidden="true">Book</div>'}
 			<div>
 				<h3>${escapeHtml(book.title)}</h3>
 				<p>${escapeHtml(book.author ? `by ${book.author}` : "No author added")}</p>

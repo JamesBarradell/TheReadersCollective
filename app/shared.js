@@ -288,9 +288,14 @@ export function avatarPlaceholder(email) {
 	return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
+export function getUploadedAssetUrl(value) {
+	const assetPath = String(value || "").trim();
+	return assetPath.startsWith("/uploads/") ? new URL(assetPath, API_BASE).href : assetPath;
+}
+
 export function getAvatarUrl(user) {
 	if (user && user.avatarUrl) {
-		return user.avatarUrl;
+		return getUploadedAssetUrl(user.avatarUrl);
 	}
 	return avatarPlaceholder(user ? user.email : "Reader");
 }

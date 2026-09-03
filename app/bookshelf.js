@@ -1,4 +1,4 @@
-import { state, refs, apiRequest, showNotice, escapeHtml } from "./shared.js";
+import { state, refs, apiRequest, showNotice, escapeHtml, getUploadedAssetUrl } from "./shared.js";
 
 const SPROUT_PLANT_SVG = `<svg viewBox="0 0 40 130" xmlns="http://www.w3.org/2000/svg">
 	<path d="M11 100h18l-3 30H14l-3-30Z" fill="#b5651d"/>
@@ -281,7 +281,7 @@ export function renderBookshelf() {
 		spine.style.top = `${position.y * 100}%`;
 		spine.title = `${book.title}${book.author ? ` by ${book.author}` : ""}`;
 		if (book.coverUrl) {
-			spine.style.backgroundImage = `url(${JSON.stringify(book.coverUrl)})`;
+			spine.style.backgroundImage = `url(${JSON.stringify(getUploadedAssetUrl(book.coverUrl))})`;
 			spine.innerHTML = `<span>${escapeHtml(book.title)}</span>`;
 		} else {
 			spine.style.background = genreColor(book.genre);
