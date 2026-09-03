@@ -118,6 +118,7 @@ test("users can upload a custom book cover", async () => {
     .attach("cover", Buffer.from("test image"), "cover.png")
     .expect(201);
   assert.match(response.body.coverUrl, /^\/uploads\/[a-f0-9-]+\.png$/);
+	await request(app).get(response.body.coverUrl).expect("Content-Type", /image\/png/).expect(200);
 });
 
 test("unfinished books cannot set or expose a rating", async () => {

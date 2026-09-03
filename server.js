@@ -579,6 +579,7 @@ app.use((error, _req, res, next) => {
   }
   return next();
 });
+app.use("/uploads", express.static(UPLOADS_DIR));
 app.use(express.static(__dirname)); app.get("*", (_req, res) => res.sendFile(path.join(__dirname, "index.html")));
 if (require.main === module) app.listen(PORT, () => console.log(`The Readers Collective server running on http://localhost:${PORT}`));
 module.exports = app;
