@@ -7,6 +7,7 @@ const test = require("node:test");
 const request = require("supertest");
 
 process.env.NODE_ENV = "test";
+process.env.CORS_ORIGIN = "https://www.thereaderscollective.com,https://thereaderscollective.com";
 process.env.READERS_CORNER_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "readers-corner-test-"));
 process.env.JWT_SECRET = "test-secret-not-for-production";
 const app = require("../server");
@@ -28,6 +29,16 @@ async function addFriend(first, second) {
 
 test("account creation requires a username", async () => {
   await request(app).post("/api/auth/register").send({ email: "missing-username@example.com", password: "secure-test-password" }).expect(400);
+});
+
+test("api allows both production site origins", async () => {
+  for (const origin of ["https://www.thereaderscollective.com", "https://thereaderscollective.com"]) {
+    const response = await request(app)
+      .get("/api/auth/google/config")
+      .set("Origin", origin)
+      .expect(200);
+    assert.equal(response.headers["access-control-allow-origin"], origin);
+  }
 });
 
 test("books are only visible to their owner", async () => {

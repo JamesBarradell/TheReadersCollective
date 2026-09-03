@@ -22,8 +22,16 @@ const UPLOADS_DIR = path.join(__dirname, "uploads");
 if (!JWT_SECRET) throw new Error("JWT_SECRET must be configured when NODE_ENV=production.");
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
+const allowedOrigins = String(process.env.CORS_ORIGIN || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const corsOrigin = allowedOrigins.length
+  ? (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin))
+  : true;
+
 app.disable("x-powered-by");
-app.use(cors({ origin: process.env.CORS_ORIGIN || true }));
+app.use(cors({ origin: corsOrigin }));
 app.use(express.json({ limit: "32kb" }));
 const noLimit = (_req, _res, next) => next();
 const authLimit = process.env.NODE_ENV === "test" ? noLimit : rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-7", legacyHeaders: false, message: { message: "Too many attempts. Try again later." } });

@@ -112,7 +112,7 @@ Build Command: npm install
 Start Command: npm start
 NODE_VERSION: 24.18.0
 NODE_ENV: production
-CORS_ORIGIN: https://www.thereaderscollective.com
+CORS_ORIGIN: https://www.thereaderscollective.com,https://thereaderscollective.com
 APP_BASE_URL: https://www.thereaderscollective.com
 JWT_SECRET: a long random secret value
 ```
