@@ -71,6 +71,7 @@ All routes except register/login require `Authorization: Bearer <token>`.
 
 - Set a strong `JWT_SECRET` as an environment variable. The server refuses to start in production without it.
 - Set `CORS_ORIGIN` to your deployed frontend origin instead of allowing all origins.
+- This backend uses Node's built-in SQLite module, so deploy it with Node 24.x.
 - Squarespace and GitLab Pages can host the static frontend, but they do not run the Node/Express API. Deploy `server.js` to a Node host, then set the backend origin in `config.js`:
 
    ```js
@@ -81,6 +82,23 @@ All routes except register/login require `Authorization: Bearer <token>`.
 - The API applies request-size limits, rate limits, strict input constraints, and invalidates earlier tokens after a password change.
 - For multi-device sync, deploy this backend to a shared host and point the frontend to that API.
 - For high scale or multiple server instances, move from the local SQLite file to managed PostgreSQL.
+
+### Render backend deployment
+
+This repo includes `render.yaml` for deploying the Node API to Render.
+
+1. Push this repo to GitLab.
+2. In Render, create a new Blueprint from the GitLab repo.
+3. Set `JWT_SECRET` to a long random value.
+4. Set `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`, and `RESEND_FROM_EMAIL` if you use Google sign-in or password reset.
+5. Deploy the service and copy its URL, for example `https://the-readers-collective-api.onrender.com`.
+6. Update `config.js` in the static site branch/deploy:
+
+   ```js
+   window.READERS_COLLECTIVE_API_BASE = "https://the-readers-collective-api.onrender.com";
+   ```
+
+7. Redeploy the static site to Squarespace/GitLab Pages.
 
 ## Tests
 

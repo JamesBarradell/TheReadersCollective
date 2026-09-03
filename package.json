@@ -4,6 +4,9 @@
   "private": true,
   "description": "The Readers Collective with backend auth and synced books",
   "main": "server.js",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
