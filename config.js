@@ -1,1 +1,1 @@
-window.READERS_COLLECTIVE_API_BASE = window.READERS_COLLECTIVE_API_BASE || "";
+window.READERS_COLLECTIVE_API_BASE = "https://the-readers-collective-api.onrender.com";

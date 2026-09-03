@@ -88,17 +88,34 @@ All routes except register/login require `Authorization: Bearer <token>`.
 This repo includes `render.yaml` for deploying the Node API to Render.
 
 1. Push this repo to GitLab.
-2. In Render, create a new Blueprint from the GitLab repo.
-3. Set `JWT_SECRET` to a long random value.
-4. Set `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`, and `RESEND_FROM_EMAIL` if you use Google sign-in or password reset.
-5. Deploy the service and copy its URL, for example `https://the-readers-collective-api.onrender.com`.
-6. Update `config.js` in the static site branch/deploy:
+2. Sign in to Render and open the Dashboard.
+3. Choose **New +** and then **Blueprint**.
+4. Connect your GitLab account if Render asks for access.
+5. Select this repository. Render should detect `render.yaml` automatically.
+6. On the environment variable screen, set `JWT_SECRET` to a long random value.
+7. Set `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`, and `RESEND_FROM_EMAIL` if you use Google sign-in or password reset.
+8. Choose **Apply** or **Deploy** and wait for the service to finish building.
+9. Copy the service URL, for example `https://the-readers-collective-api.onrender.com`.
+10. Update `config.js` in the static site branch/deploy:
 
    ```js
    window.READERS_COLLECTIVE_API_BASE = "https://the-readers-collective-api.onrender.com";
    ```
 
-7. Redeploy the static site to Squarespace/GitLab Pages.
+11. Redeploy the static site to Squarespace/GitLab Pages.
+
+If Render does not show a Blueprint option, create a regular **Web Service** instead with these settings:
+
+```text
+Runtime: Node
+Build Command: npm install
+Start Command: npm start
+NODE_VERSION: 24.18.0
+NODE_ENV: production
+CORS_ORIGIN: https://www.thereaderscollective.com
+APP_BASE_URL: https://www.thereaderscollective.com
+JWT_SECRET: a long random secret value
+```
 
 ## Tests
 
