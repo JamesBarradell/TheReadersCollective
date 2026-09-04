@@ -385,6 +385,16 @@ async function addMissingBookCovers() {
 	}
 
 	for (const updatedBook of updatedBooks) {
+		if (!updatedBook) {
+			continue;
+		}
+		const index = state.books.findIndex((book) => book.id === updatedBook.id);
+		if (index >= 0) {
+			state.books[index] = updatedBook;
+		}
+	}
+	rerender();
+}
 
 refs.openDeleteAccountDialog.addEventListener("click", () => {
 	refs.deleteAccountConfirmation.value = "";
@@ -409,16 +419,6 @@ refs.confirmDeleteAccount.addEventListener("click", async () => {
 		refs.settingsStatus.textContent = error instanceof Error ? error.message : "Unable to delete your account right now.";
 	}
 });
-		if (!updatedBook) {
-			continue;
-		}
-		const index = state.books.findIndex((book) => book.id === updatedBook.id);
-		if (index >= 0) {
-			state.books[index] = updatedBook;
-		}
-	}
-	rerender();
-}
 
 refs.finishRatingForm.addEventListener("submit", (event) => {
 	event.preventDefault();
