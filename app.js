@@ -288,6 +288,20 @@ async function loadClubMessages(clubId) {
 	renderFriendsAndChat();
 }
 
+async function loadClubWorkspaceMessages(clubId, roomId) {
+	if (!state.currentUser || !clubId || !roomId) return;
+	try {
+		const response = await apiRequest(`/book-clubs/${encodeURIComponent(clubId)}/messages?roomId=${encodeURIComponent(roomId)}`, { method: "GET" });
+		if (state.activeClubId !== clubId || state.activeClubWorkspaceRoomId !== roomId) return;
+		state.activeClubWorkspaceRoomName = response?.room?.name || state.activeClubWorkspaceRoomName;
+		state.clubWorkspaceMessages = Array.isArray(response?.messages) ? response.messages : [];
+		state.clubWorkspaceLoadError = "";
+	} catch (error) {
+		state.clubWorkspaceMessages = [];
+		state.clubWorkspaceLoadError = error instanceof Error ? error.message : "Unable to load this room.";
+	}
+}
+
 async function loadFriendProfile(friendId) {
 	if (!state.currentUser || !friendId) {
 		renderFriendProfile(null);
@@ -330,6 +344,10 @@ function setActiveFriend(friendId) {
 	state.activeClubId = "";
 	state.activeClubRoomId = "";
 	state.activeClubRoomName = "";
+	state.activeClubWorkspaceRoomId = "";
+	state.activeClubWorkspaceRoomName = "";
+	state.clubWorkspaceMessages = [];
+	state.clubWorkspaceLoadError = "";
 	state.friendChatMessages = [];
 	state.friendChatLoadError = "";
 	state.unreadMessageCount = 0;
@@ -344,11 +362,15 @@ function setActiveFriend(friendId) {
 	}
 }
 
-function setActiveClub(clubId, roomId = "") {
+function setActiveClub(clubId) {
 	state.chatMode = "club";
 	state.activeClubId = clubId || "";
-	state.activeClubRoomId = roomId || (clubId ? `${clubId}:lobby` : "");
+	state.activeClubRoomId = clubId ? `${clubId}:lobby` : "";
 	state.activeClubRoomName = "";
+	state.activeClubWorkspaceRoomId = "";
+	state.activeClubWorkspaceRoomName = "";
+	state.clubWorkspaceMessages = [];
+	state.clubWorkspaceLoadError = "";
 	state.activeFriendId = "";
 	state.clubChatMessages = [];
 	state.clubChatLoadError = "";
@@ -603,12 +625,12 @@ function renderClubWorkspaceContent(club, books, discussions, isOwner, available
 
 function renderClubRoomChatWindow(club) {
 	const rooms = Array.isArray(club.rooms) ? club.rooms : [];
-	const room = rooms.find((entry) => entry.id === state.activeClubRoomId);
-	const roomName = room?.name || state.activeClubRoomName || "Club room";
+	const room = rooms.find((entry) => entry.id === state.activeClubWorkspaceRoomId);
+	const roomName = room?.name || state.activeClubWorkspaceRoomName || "Club room";
 	refs.clubWorkspaceTitle.textContent = roomName;
 	refs.clubWorkspaceContent.innerHTML = `<section class="club-room-window">
 		<div class="club-room-window-top"><button class="icon-btn" type="button" data-club-back-workspace="true" aria-label="Back to chapter rooms" title="Back to chapter rooms"><i data-lucide="arrow-left" aria-hidden="true"></i></button><div><span class="section-kicker">${escapeHtml(club.name)}</span><h3>${escapeHtml(roomName)}</h3></div></div>
-		<div class="chat-messages">${state.clubChatMessages.length ? state.clubChatMessages.map((message) => { const mine = message.fromUserId === state.currentUser.id; return `<div class="chat-bubble ${mine ? "me" : "them"}"><div class="who">${escapeHtml(mine ? "You" : message.fromEmail || "Club member")}</div><div>${escapeHtml(message.text || "")}</div><div class="when">${escapeHtml(formatChatTime(message.createdAt))}</div></div>`; }).join("") : '<div class="chat-empty">No messages in this room yet. Start the conversation.</div>'}</div>
+		<div class="chat-messages">${state.clubWorkspaceMessages.length ? state.clubWorkspaceMessages.map((message) => { const mine = message.fromUserId === state.currentUser.id; return `<div class="chat-bubble ${mine ? "me" : "them"}"><div class="who">${escapeHtml(mine ? "You" : message.fromEmail || "Club member")}</div><div>${escapeHtml(message.text || "")}</div><div class="when">${escapeHtml(formatChatTime(message.createdAt))}</div></div>`; }).join("") : `<div class="chat-empty">${escapeHtml(state.clubWorkspaceLoadError || "No messages in this room yet. Start the conversation.")}</div>`}</div>
 		<form data-club-action="room-message" class="chat-form"><div class="field full"><label for="club-workspace-message">Message</label><textarea id="club-workspace-message" name="text" rows="3" maxlength="2000" required placeholder="Write to this room..."></textarea></div><div class="btn-row"><button class="btn-main" type="submit">Send</button></div></form>
 	</section>`;
 	if (window.lucide) {
@@ -863,7 +885,7 @@ refs.bookClubsList.addEventListener("click", (event) => {
 		return;
 	}
 	if (button.dataset.action === "open-club-chat") {
-		setActiveClub(button.dataset.id || "", button.dataset.roomId || "");
+		setActiveClub(button.dataset.id || "");
 		return;
 	}
 	if (button.dataset.action !== "delete-club" || !window.confirm("Delete this book club?")) return;
@@ -906,14 +928,15 @@ refs.clubWorkspaceContent.addEventListener("click", (event) => {
 	const selectRoom = target.closest("[data-club-select-room]");
 	if (selectRoom && state.activeClubId) {
 		(async () => {
-			state.chatMode = "club";
-			state.activeClubRoomId = selectRoom.dataset.clubRoomId || state.activeClubRoomId;
-			state.activeClubRoomName = selectRoom.dataset.clubRoomName || "";
-			state.activeFriendId = "";
-			state.clubChatMessages = [];
-			state.clubChatLoadError = "";
-			renderFriendsAndChat();
-			await loadClubMessages(state.activeClubId);
+			const clubId = state.activeClubId;
+			state.activeClubWorkspaceRoomId = selectRoom.dataset.clubRoomId || "";
+			state.activeClubWorkspaceRoomName = selectRoom.dataset.clubRoomName || "";
+			state.clubWorkspaceMessages = [];
+			state.clubWorkspaceLoadError = "";
+			setActiveClub(clubId);
+			state.activeClubWorkspaceRoomId = selectRoom.dataset.clubRoomId || "";
+			state.activeClubWorkspaceRoomName = selectRoom.dataset.clubRoomName || "";
+			await loadClubWorkspaceMessages(clubId, state.activeClubWorkspaceRoomId);
 			const club = state.bookClubs.find((entry) => entry.id === state.activeClubId);
 			if (club) renderClubRoomChatWindow(club);
 		})().catch((error) => showNotice(error instanceof Error ? error.message : "Unable to select this room."));
@@ -922,7 +945,7 @@ refs.clubWorkspaceContent.addEventListener("click", (event) => {
 	const openChat = target.closest("[data-club-open-chat]");
 	if (openChat && state.activeClubId) {
 		refs.clubWorkspaceDialog.close();
-		setActiveClub(state.activeClubId, openChat.dataset.clubRoomId || state.activeClubRoomId);
+		setActiveClub(state.activeClubId);
 		return;
 	}
 	const month = target.closest("[data-club-book-month]");
@@ -950,8 +973,8 @@ refs.clubWorkspaceContent.addEventListener("submit", (event) => {
 	}
 	if (action === "room-message") {
 		const text = String(data.get("text") || "").trim();
-		if (!text || !state.activeClubRoomId) return;
-		apiRequest(`/book-clubs/${clubId}/messages`, { method: "POST", body: JSON.stringify({ roomId: state.activeClubRoomId, text }) }).then(() => loadClubMessages(clubId)).then(() => { const club = state.bookClubs.find((entry) => entry.id === clubId); if (club) renderClubRoomChatWindow(club); }).catch((error) => showNotice(error instanceof Error ? error.message : "Unable to send this message."));
+		if (!text || !state.activeClubWorkspaceRoomId) return;
+		apiRequest(`/book-clubs/${clubId}/messages`, { method: "POST", body: JSON.stringify({ roomId: state.activeClubWorkspaceRoomId, text }) }).then(() => loadClubWorkspaceMessages(clubId, state.activeClubWorkspaceRoomId)).then(() => { const club = state.bookClubs.find((entry) => entry.id === clubId); if (club) renderClubRoomChatWindow(club); }).catch((error) => showNotice(error instanceof Error ? error.message : "Unable to send this message."));
 		return;
 	}
 	const endpoint = action === "discussion" || action === "chapter-discussion" ? `/book-clubs/${clubId}/discussions` : action === "invite" ? `/book-clubs/${clubId}/invitations` : `/book-clubs/${clubId}/books`;

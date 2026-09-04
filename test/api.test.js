@@ -279,6 +279,18 @@ test("books preserve did-not-finish state until explicitly resumed", async () =>
   assert.equal(resumed.body.book.didNotFinish, false);
 });
 
+test("club chapter comment counts include chapter discussions", async () => {
+  const account = await register("chapter-comments@example.com");
+  const book = await request(app).post("/api/books").set("Authorization", `Bearer ${account.token}`).send({ title: "Chapter count" }).expect(201);
+  const club = await request(app).post("/api/book-clubs").set("Authorization", `Bearer ${account.token}`).send({ name: "Comment counters" }).expect(201);
+  await request(app).put(`/api/book-clubs/${club.body.club.id}/books/${book.body.book.id}/book-of-month`).set("Authorization", `Bearer ${account.token}`).send({ chapterCount: 7 }).expect(200);
+  await request(app).post(`/api/book-clubs/${club.body.club.id}/discussions`).set("Authorization", `Bearer ${account.token}`).send({ text: "[Chapter 7 - Chapter count] A thoughtful comment." }).expect(201);
+
+  const clubs = await request(app).get("/api/book-clubs").set("Authorization", `Bearer ${account.token}`).expect(200);
+  const chapterSeven = clubs.body.clubs[0].rooms.find((room) => room.chapterNumber === 7);
+  assert.equal(chapterSeven.messageCount, 1);
+});
+
 test("wishlist books remain separate until marked as owned", async () => {
   const account = await register("wishlist@example.com");
   const wishlistBook = await request(app).post("/api/books").set("Authorization", `Bearer ${account.token}`).send({ title: "Wishlist title", isOwned: false }).expect(201);
