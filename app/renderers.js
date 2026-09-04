@@ -386,14 +386,16 @@ export function renderBookClubs() {
 		return;
 	}
 	if (!state.bookClubs.length) {
-		refs.bookClubsList.innerHTML = '<div class="chat-empty">Create a club with friends to start a group reading space.</div>';
+		refs.bookClubsList.innerHTML = '<div class="book-club-empty"><i data-lucide="book-open-check" aria-hidden="true"></i><strong>No club rooms yet</strong><span>Create a club with friends to open group chat and chapter discussion rooms.</span></div>';
 	} else {
 		refs.bookClubsList.innerHTML = state.bookClubs.map((club) => `
-			<article class="book-club-card">
-				<div class="book-club-heading"><div><h3>${escapeHtml(club.name)}</h3><p>${club.members.length} member${club.members.length === 1 ? "" : "s"}</p></div>${club.ownerId === state.currentUser.id ? `<button class="icon-btn remove-club" type="button" data-action="delete-club" data-id="${club.id}" aria-label="Delete ${escapeHtml(club.name)}" title="Delete club"><i data-lucide="trash-2" aria-hidden="true"></i></button>` : ""}</div>
-				<div class="club-members">${club.members.map((member) => `<span>${escapeHtml(member.email)}</span>`).join("")}</div>
-				<button class="club-chat-btn" type="button" data-action="open-club-workspace" data-id="${club.id}">Open club workspace</button>
-				<button class="club-chat-btn" type="button" data-action="open-club-chat" data-id="${club.id}">Open group chat</button>
+			<article class="book-club-card ${club.id === state.activeClubId ? "active" : ""}">
+				<div class="book-club-heading"><div><span class="section-kicker">Book club</span><h3>${escapeHtml(club.name)}</h3><p>${club.members.length} member${club.members.length === 1 ? "" : "s"} in this room</p></div>${club.ownerId === state.currentUser.id ? `<button class="icon-btn remove-club" type="button" data-action="delete-club" data-id="${club.id}" aria-label="Delete ${escapeHtml(club.name)}" title="Delete club"><i data-lucide="trash-2" aria-hidden="true"></i></button>` : ""}</div>
+				<div class="club-room-actions">
+					<button class="club-chat-btn" type="button" data-action="open-club-chat" data-id="${club.id}"><i data-lucide="messages-square" aria-hidden="true"></i><span>Group chat</span></button>
+					<button class="club-chat-btn chapter-room-btn" type="button" data-action="open-club-workspace" data-id="${club.id}"><i data-lucide="book-marked" aria-hidden="true"></i><span>Chapter rooms</span></button>
+				</div>
+				<div class="club-members" aria-label="${escapeHtml(club.name)} members">${club.members.map((member) => `<span>${escapeHtml(member.email)}</span>`).join("")}</div>
 			</article>
 		`).join("");
 	}

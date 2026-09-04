@@ -909,6 +909,59 @@ body {
 	grid-template-columns: 0.9fr 1.1fr;
 }
 
+.community-shell {
+	display: grid;
+	grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.8fr);
+	grid-template-areas:
+		"clubs friends"
+		"chat friends";
+	gap: 1rem;
+	padding: 1.25rem;
+}
+
+.book-clubs-hub,
+.friends-hub,
+.community-chat-room {
+	padding: 1rem;
+	border: 1px solid rgba(230, 216, 200, 0.9);
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.54);
+}
+
+.book-clubs-hub {
+	grid-area: clubs;
+	background:
+		linear-gradient(135deg, rgba(255, 250, 243, 0.82), rgba(226, 242, 238, 0.55)),
+		rgba(255, 255, 255, 0.54);
+}
+
+.friends-hub {
+	grid-area: friends;
+	display: grid;
+	align-content: start;
+	gap: 0.85rem;
+}
+
+.community-chat-room {
+	grid-area: chat;
+}
+
+.community-section-heading {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.8rem;
+	margin-bottom: 0.75rem;
+}
+
+.section-kicker {
+	color: var(--accent);
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
 .friend-form,
 .chat-form {
 	display: grid;
@@ -936,8 +989,7 @@ body {
 }
 
 .friends-heading {
-	margin-top: 1rem;
-	margin-bottom: 0.2rem;
+	margin-bottom: 0;
 }
 
 .friends-heading .card-title {
@@ -946,21 +998,56 @@ body {
 
 .book-clubs-list {
 	display: grid;
-	gap: 0.55rem;
+	gap: 0.75rem;
 }
 
 .book-club-card {
-	padding: 0.7rem;
-	border: 1px solid #d5d0e6;
-	border-left: 4px solid #7965a7;
-	border-radius: 7px;
-	background: rgba(245, 242, 252, 0.7);
+	display: grid;
+	gap: 0.8rem;
+	padding: 0.9rem;
+	border: 1px solid rgba(19, 111, 99, 0.2);
+	border-left: 5px solid var(--accent);
+	border-radius: 10px;
+	background: rgba(255, 255, 255, 0.82);
+	box-shadow: 0 12px 28px rgba(19, 34, 45, 0.08);
+}
+
+.book-club-card.active {
+	border-color: rgba(19, 111, 99, 0.42);
+	box-shadow: inset 0 0 0 1px rgba(19, 111, 99, 0.12), 0 12px 28px rgba(19, 34, 45, 0.08);
+}
+
+.book-club-empty {
+	display: grid;
+	place-items: center;
+	gap: 0.35rem;
+	min-height: 190px;
+	padding: 1.2rem;
+	border: 1px dashed rgba(19, 111, 99, 0.35);
+	border-radius: 12px;
+	background: rgba(255, 255, 255, 0.58);
+	color: var(--ink-soft);
+	text-align: center;
+}
+
+.book-club-empty svg {
+	width: 30px;
+	height: 30px;
+	color: var(--accent);
+}
+
+.book-club-empty strong {
+	color: var(--ink);
 }
 
 .club-invitations,
 .club-workspace-content {
 	display: grid;
 	gap: 0.65rem;
+}
+
+.club-workspace-dialog {
+	width: min(820px, calc(100% - 2rem));
 }
 
 .club-invitation,
@@ -998,16 +1085,62 @@ body {
 	font-size: 0.96rem;
 }
 
+.club-workspace-hero {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 1rem;
+	padding: 0.9rem;
+	border: 1px solid rgba(19, 111, 99, 0.18);
+	border-radius: 12px;
+	background: linear-gradient(135deg, rgba(226, 242, 238, 0.82), rgba(255, 250, 243, 0.74));
+}
+
+.club-workspace-hero h3 {
+	font-family: "Merriweather", Georgia, serif;
+	font-size: 1.28rem;
+}
+
+.club-workspace-hero p {
+	color: var(--ink-soft);
+	font-size: 0.86rem;
+}
+
 .club-inline-form,
-.club-discussion-form {
+.club-discussion-form,
+.chapter-discussion-form {
 	display: flex;
 	gap: 0.5rem;
 }
 
 .club-inline-form select,
-.club-discussion-form textarea {
+.club-discussion-form textarea,
+.chapter-discussion-form textarea {
 	flex: 1;
 	min-width: 0;
+}
+
+.chapter-discussion-form {
+	align-items: stretch;
+	flex-wrap: wrap;
+}
+
+.chapter-discussion-form select {
+	flex: 1 1 190px;
+}
+
+.chapter-discussion-form input {
+	flex: 0 1 120px;
+}
+
+.chapter-discussion-form textarea {
+	flex-basis: 100%;
+}
+
+.chapter-discussion-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.55rem;
 }
 
 .club-reading-list,
@@ -1049,6 +1182,21 @@ body {
 	white-space: pre-wrap;
 }
 
+.club-discussion-heading {
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	flex-wrap: wrap;
+}
+
+.club-discussion-reply {
+	margin-top: 0.55rem;
+	padding: 0.55rem;
+	border-left: 3px solid rgba(19, 111, 99, 0.28);
+	border-radius: 6px;
+	background: rgba(255, 255, 255, 0.58);
+}
+
 .club-workspace-members span {
 	display: flex;
 	justify-content: space-between;
@@ -1064,7 +1212,8 @@ body {
 }
 
 .book-club-heading h3 {
-	font-size: 0.94rem;
+	font-family: "Merriweather", Georgia, serif;
+	font-size: 1.08rem;
 }
 
 .book-club-heading p,
@@ -1096,14 +1245,34 @@ body {
 	background: #fff;
 }
 
+.club-room-actions {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.55rem;
+}
+
 .club-chat-btn {
-	margin-top: 0.6rem;
-	padding: 0.38rem 0.55rem;
-	border: 1px solid #d5d0e6;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	padding: 0.52rem 0.65rem;
+	border: 1px solid #c5e0d8;
 	border-radius: 7px;
-	background: #eeeaf8;
-	color: #584481;
-	font-size: 0.78rem;
+	background: #e2f2ee;
+	color: #0f5f53;
+	font-size: 0.82rem;
+}
+
+.club-chat-btn svg {
+	width: 16px;
+	height: 16px;
+}
+
+.chapter-room-btn {
+	border-color: #e3c994;
+	background: #fbefd3;
+	color: #76500f;
 }
 
 .club-members-field {
@@ -2815,6 +2984,27 @@ button.month-count.selected strong {
 	.stats,
 	.chat-grid {
 		grid-template-columns: 1fr;
+	}
+
+	.community-shell {
+		grid-template-columns: 1fr;
+		grid-template-areas:
+			"clubs"
+			"friends"
+			"chat";
+		padding: 0.85rem;
+	}
+
+	.club-room-actions,
+	.chapter-discussion-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.club-workspace-hero,
+	.club-inline-form,
+	.club-discussion-form,
+	.chapter-discussion-form {
+		flex-direction: column;
 	}
 
 	.shelf-layout {

@@ -273,24 +273,37 @@
 		</section>
 
 		<section id="community-view" class="panel app-view" hidden>
-			<div class="grid chat-grid">
-				<article class="chat-sidebar">
-					<section class="book-clubs-panel" aria-labelledby="book-clubs-title">
-						<div class="toolbar"><h2 id="book-clubs-title" class="card-title">Book Clubs</h2><button id="open-club-dialog" class="icon-btn" type="button" aria-label="Create book club" title="Create book club"><i data-lucide="users-round" aria-hidden="true"></i></button></div>
-						<div id="book-clubs-list" class="book-clubs-list"></div>
-						<div id="club-invitations" class="club-invitations"></div>
-					</section>
+			<div class="community-shell">
+				<article class="book-clubs-hub" aria-labelledby="book-clubs-title">
+					<div class="community-section-heading">
+						<div>
+							<p class="section-kicker">Reading rooms</p>
+							<h2 id="book-clubs-title" class="card-title">Book Clubs</h2>
+						</div>
+						<button id="open-club-dialog" class="icon-btn" type="button" aria-label="Create book club" title="Create book club"><i data-lucide="users-round" aria-hidden="true"></i></button>
+					</div>
+					<div id="book-clubs-list" class="book-clubs-list"></div>
+					<div id="club-invitations" class="club-invitations"></div>
+				</article>
+
+				<aside class="friends-hub" aria-labelledby="friends-title">
+					<div class="community-section-heading friends-heading">
+						<div>
+							<p class="section-kicker">People</p>
+							<h2 id="friends-title" class="card-title">Friends</h2>
+						</div>
+						<button id="open-friend-dialog" class="icon-btn" type="button" aria-label="Add a friend" title="Add a friend"><i data-lucide="user-plus" aria-hidden="true"></i></button>
+					</div>
+					<p class="hint">Send a request by email. Profiles and private chat open after you both add each other.</p>
+					<div id="friends-list" class="friends-list"></div>
 					<section class="recommendations-panel" aria-labelledby="recommendations-title">
 						<h2 id="recommendations-title" class="card-title">Recommended To You</h2>
 						<div id="recommendations-list" class="recommendations-list"></div>
 					</section>
 					<section class="activity-panel" aria-labelledby="activity-title"><h2 id="activity-title" class="card-title">Friends Activity</h2><div id="activity-list" class="activity-list"></div></section>
-					<div class="toolbar friends-heading"><h2 class="card-title">Friends</h2><button id="open-friend-dialog" class="icon-btn" type="button" aria-label="Add a friend" title="Add a friend"><i data-lucide="user-plus" aria-hidden="true"></i></button></div>
-					<p class="hint">Send a request by email. Profiles and private chat open after you both add each other.</p>
-					<div id="friends-list" class="friends-list"></div>
-				</article>
+				</aside>
 
-				<article class="chat-room">
+				<article class="chat-room community-chat-room">
 					<section id="friend-profile" class="friend-profile" aria-live="polite"></section>
 					<h2 class="card-title">Chat Room</h2>
 					<p id="chat-room-title" class="hint">Choose a friend to start chatting.</p>

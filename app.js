@@ -508,6 +508,52 @@ async function loadBookClubsFromApi() {
 	renderBookClubs();
 }
 
+function discussionAuthor(discussion) {
+	return discussion.username || discussion.email || "Club member";
+}
+
+function getChapterLabel(text) {
+	const match = String(text || "").match(/^\[(Chapter [^\]]+)\]\s*/i);
+	return match ? match[1] : "";
+}
+
+function getDiscussionBody(text) {
+	return String(text || "").replace(/^\[Chapter [^\]]+\]\s*/i, "");
+}
+
+function renderClubDiscussionCard(discussion, replies) {
+	const chapterLabel = getChapterLabel(discussion.text);
+	return `<article class="club-discussion ${chapterLabel ? "chapter-discussion" : ""}">
+		<div class="club-discussion-heading"><strong>${escapeHtml(discussionAuthor(discussion))}</strong>${chapterLabel ? `<span class="pill">${escapeHtml(chapterLabel)}</span>` : ""}</div>
+		<p>${escapeHtml(getDiscussionBody(discussion.text))}</p>
+		${replies.map((reply) => `<div class="club-discussion-reply"><strong>${escapeHtml(discussionAuthor(reply))}</strong><p>${escapeHtml(getDiscussionBody(reply.text))}</p></div>`).join("")}
+		<button class="btn-sub" type="button" data-club-reply="${discussion.id}">Reply</button>
+	</article>`;
+}
+
+function renderClubWorkspaceContent(club, books, discussions, isOwner, availableFriends) {
+	const repliesByParent = new Map();
+	for (const discussion of discussions) {
+		if (!discussion.parentId) continue;
+		const replies = repliesByParent.get(discussion.parentId) || [];
+		replies.push(discussion);
+		repliesByParent.set(discussion.parentId, replies);
+	}
+	const threads = discussions.filter((discussion) => !discussion.parentId);
+	const chapterThreads = threads.filter((discussion) => getChapterLabel(discussion.text));
+	const generalThreads = threads.filter((discussion) => !getChapterLabel(discussion.text));
+	const bookOptions = books.length ? books : state.books;
+	return `<section class="club-workspace-hero">
+		<div><span class="section-kicker">Book club</span><h3>${escapeHtml(club.name)}</h3><p>${club.members.length} member${club.members.length === 1 ? "" : "s"} reading together</p></div>
+		<button class="club-chat-btn" type="button" data-club-open-chat="true"><i data-lucide="messages-square" aria-hidden="true"></i><span>Open group chat</span></button>
+	</section>
+	<section class="club-workspace-section"><h3>Invite members</h3>${isOwner ? `<form data-club-action="invite" class="club-inline-form"><select name="userId" required><option value="">Choose a friend</option>${availableFriends.map((friend) => `<option value="${friend.id}">${escapeHtml(friend.email)}</option>`).join("")}</select><button class="btn-sub" type="submit">Invite</button></form>` : '<p class="hint">Only the club owner can invite members.</p>'}</section>
+	<section class="club-workspace-section"><h3>Reading list</h3>${isOwner || state.currentUser ? `<form data-club-action="add-book" class="club-inline-form"><select name="bookId" required><option value="">Add one of your books</option>${state.books.map((book) => `<option value="${book.id}">${escapeHtml(book.title)}</option>`).join("")}</select><button class="btn-sub" type="submit">Add book</button></form>` : ""}<div class="club-reading-list">${books.length ? books.map((book) => `<div class="club-reading-item"><div><strong>${escapeHtml(book.title)}</strong>${book.isBookOfMonth ? `<span class="pill">Book of the month</span>` : ""}<span class="meta">Your progress: ${book.progress}%</span></div><label>Progress <input type="number" min="0" max="100" value="${book.progress}" data-club-progress="${book.id}"></label>${isOwner ? `<button class="btn-sub" type="button" data-club-book-month="${book.id}">Choose month</button>` : ""}</div>`).join("") : '<p class="hint">No books on the reading list yet.</p>'}</div></section>
+	<section class="club-workspace-section chapter-room-section"><h3>Chapter comments</h3><form data-club-action="chapter-discussion" class="chapter-discussion-form"><select name="bookTitle" aria-label="Book for chapter comment"><option value="">General book</option>${bookOptions.map((book) => `<option value="${escapeHtml(book.title)}">${escapeHtml(book.title)}</option>`).join("")}</select><input name="chapterNumber" inputmode="numeric" maxlength="20" placeholder="Chapter"><textarea name="text" rows="3" maxlength="2000" required placeholder="Comment on this chapter..."></textarea><button class="btn-main" type="submit">Post Chapter Comment</button></form><div class="chapter-discussion-grid">${chapterThreads.length ? chapterThreads.map((discussion) => renderClubDiscussionCard(discussion, repliesByParent.get(discussion.id) || [])).join("") : '<p class="hint">No chapter comments yet.</p>'}</div></section>
+	<section class="club-workspace-section"><h3>Members</h3><div class="club-workspace-members">${club.members.map((member) => `<span>${escapeHtml(member.email)}${isOwner && member.id !== state.currentUser.id ? ` <button type="button" data-club-remove-member="${member.id}" aria-label="Remove ${escapeHtml(member.email)}">Remove</button>` : ""}</span>`).join("")}</div>${!isOwner ? `<button class="btn-sub" type="button" data-club-leave="true">Leave club</button>` : ""}</section>
+	<section class="club-workspace-section"><h3>General discussion</h3><div class="club-discussions">${generalThreads.length ? generalThreads.map((discussion) => renderClubDiscussionCard(discussion, repliesByParent.get(discussion.id) || [])).join("") : '<p class="hint">Start the discussion.</p>'}</div><form data-club-action="discussion" class="club-discussion-form"><input type="hidden" name="parentId"><textarea name="text" rows="3" maxlength="2000" required placeholder="Start a discussion..."></textarea><button class="btn-main" type="submit">Post</button></form></section>`;
+}
+
 async function openClubWorkspace(clubId) {
 	const club = state.bookClubs.find((entry) => entry.id === clubId);
 	if (!club) return;
@@ -521,7 +567,10 @@ async function openClubWorkspace(clubId) {
 	const isOwner = club.ownerId === state.currentUser.id;
 	const availableFriends = state.friends.filter((friend) => !club.members.some((member) => member.id === friend.id));
 	refs.clubWorkspaceTitle.textContent = club.name;
-	refs.clubWorkspaceContent.innerHTML = `<section class="club-workspace-section"><h3>Invite members</h3>${isOwner ? `<form data-club-action="invite" class="club-inline-form"><select name="userId" required><option value="">Choose a friend</option>${availableFriends.map((friend) => `<option value="${friend.id}">${escapeHtml(friend.email)}</option>`).join("")}</select><button class="btn-sub" type="submit">Invite</button></form>` : '<p class="hint">Only the club owner can invite members.</p>'}</section><section class="club-workspace-section"><h3>Reading list</h3>${isOwner || state.currentUser ? `<form data-club-action="add-book" class="club-inline-form"><select name="bookId" required><option value="">Add one of your books</option>${state.books.map((book) => `<option value="${book.id}">${escapeHtml(book.title)}</option>`).join("")}</select><button class="btn-sub" type="submit">Add book</button></form>` : ""}<div class="club-reading-list">${books.length ? books.map((book) => `<div class="club-reading-item"><div><strong>${escapeHtml(book.title)}</strong>${book.isBookOfMonth ? `<span class="pill">Book of the month</span>` : ""}<span class="meta">Your progress: ${book.progress}%</span></div><label>Progress <input type="number" min="0" max="100" value="${book.progress}" data-club-progress="${book.id}"></label>${isOwner ? `<button class="btn-sub" type="button" data-club-book-month="${book.id}">Choose month</button>` : ""}</div>`).join("") : '<p class="hint">No books on the reading list yet.</p>'}</div></section><section class="club-workspace-section"><h3>Members</h3><div class="club-workspace-members">${club.members.map((member) => `<span>${escapeHtml(member.email)}${isOwner && member.id !== state.currentUser.id ? ` <button type="button" data-club-remove-member="${member.id}" aria-label="Remove ${escapeHtml(member.email)}">Remove</button>` : ""}</span>`).join("")}</div>${!isOwner ? `<button class="btn-sub" type="button" data-club-leave="true">Leave club</button>` : ""}</section><section class="club-workspace-section"><h3>Discussion</h3><div class="club-discussions">${discussions.length ? discussions.map((discussion) => `<article class="club-discussion" style="margin-left:${discussion.parentId ? "1rem" : "0"}"><strong>${escapeHtml(discussion.username || discussion.email)}</strong><p>${escapeHtml(discussion.text)}</p><button class="btn-sub" type="button" data-club-reply="${discussion.id}">Reply</button></article>`).join("") : '<p class="hint">Start the discussion.</p>'}</div><form data-club-action="discussion" class="club-discussion-form"><input type="hidden" name="parentId"><textarea name="text" rows="3" maxlength="2000" required placeholder="Start a discussion..."></textarea><button class="btn-main" type="submit">Post</button></form></section>`;
+	refs.clubWorkspaceContent.innerHTML = renderClubWorkspaceContent(club, books, discussions, isOwner, availableFriends);
+	if (window.lucide) {
+		window.lucide.createIcons({ nodes: [refs.clubWorkspaceContent] });
+	}
 	refs.clubWorkspaceDialog.showModal();
 }
 
@@ -782,6 +831,12 @@ refs.clubWorkspaceContent.addEventListener("click", (event) => {
 		if (text instanceof HTMLTextAreaElement) text.focus();
 		return;
 	}
+	const openChat = target.closest("[data-club-open-chat]");
+	if (openChat && state.activeClubId) {
+		refs.clubWorkspaceDialog.close();
+		setActiveClub(state.activeClubId);
+		return;
+	}
 	const month = target.closest("[data-club-book-month]");
 	if (month) apiRequest(`/book-clubs/${encodeURIComponent(state.activeClubId || "")}/books/${encodeURIComponent(month.dataset.clubBookMonth || "")}/book-of-month`, { method: "PUT" }).then(() => openClubWorkspace(state.activeClubId)).catch((error) => showNotice(error instanceof Error ? error.message : "Unable to choose the book of the month."));
 	const remove = target.closest("[data-club-remove-member]");
@@ -798,8 +853,17 @@ refs.clubWorkspaceContent.addEventListener("submit", (event) => {
 	if (!clubId) return;
 	const data = new FormData(form);
 	const action = form.dataset.clubAction;
-	const endpoint = action === "discussion" ? `/book-clubs/${clubId}/discussions` : action === "invite" ? `/book-clubs/${clubId}/invitations` : `/book-clubs/${clubId}/books`;
-	apiRequest(endpoint, { method: "POST", body: JSON.stringify(Object.fromEntries(data)) }).then(() => openClubWorkspace(clubId)).catch((error) => showNotice(error instanceof Error ? error.message : "Unable to update this club right now."));
+	const endpoint = action === "discussion" || action === "chapter-discussion" ? `/book-clubs/${clubId}/discussions` : action === "invite" ? `/book-clubs/${clubId}/invitations` : `/book-clubs/${clubId}/books`;
+	const payload = Object.fromEntries(data);
+	if (action === "chapter-discussion") {
+		const chapter = String(payload.chapterNumber || "").trim();
+		const bookTitle = String(payload.bookTitle || "").trim();
+		const label = `Chapter ${chapter || "note"}${bookTitle ? ` - ${bookTitle}` : ""}`;
+		payload.text = `[${label}] ${String(payload.text || "").trim()}`;
+		delete payload.bookTitle;
+		delete payload.chapterNumber;
+	}
+	apiRequest(endpoint, { method: "POST", body: JSON.stringify(payload) }).then(() => openClubWorkspace(clubId)).catch((error) => showNotice(error instanceof Error ? error.message : "Unable to update this club right now."));
 });
 
 refs.clubWorkspaceContent.addEventListener("change", (event) => {
