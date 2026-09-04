@@ -264,10 +264,12 @@ async function loadClubMessages(clubId) {
 		return;
 	}
 	try {
-		const response = await apiRequest(`/book-clubs/${encodeURIComponent(clubId)}/messages`, { method: "GET" });
+		const roomId = state.activeClubRoomId || `${clubId}:lobby`;
+		const response = await apiRequest(`/book-clubs/${encodeURIComponent(clubId)}/messages?roomId=${encodeURIComponent(roomId)}`, { method: "GET" });
 		if (state.chatMode !== "club" || state.activeClubId !== clubId) {
 			return;
 		}
+		state.activeClubRoomId = response && response.room ? response.room.id : roomId;
 		state.chatMessages = response && Array.isArray(response.messages) ? response.messages : [];
 		state.chatLoadError = "";
 	} catch (error) {
@@ -317,6 +319,7 @@ function setActiveFriend(friendId) {
 	state.chatMode = "direct";
 	state.activeFriendId = friendId || "";
 	state.activeClubId = "";
+	state.activeClubRoomId = "";
 	state.chatMessages = [];
 	state.chatLoadError = "";
 	state.unreadMessageCount = 0;
@@ -331,9 +334,10 @@ function setActiveFriend(friendId) {
 	}
 }
 
-function setActiveClub(clubId) {
+function setActiveClub(clubId, roomId = "") {
 	state.chatMode = "club";
 	state.activeClubId = clubId || "";
+	state.activeClubRoomId = roomId || (clubId ? `${clubId}:lobby` : "");
 	state.activeFriendId = "";
 	state.chatMessages = [];
 	state.chatLoadError = "";
@@ -543,10 +547,18 @@ function renderClubWorkspaceContent(club, books, discussions, isOwner, available
 	const chapterThreads = threads.filter((discussion) => getChapterLabel(discussion.text));
 	const generalThreads = threads.filter((discussion) => !getChapterLabel(discussion.text));
 	const bookOptions = books.length ? books : state.books;
+	const rooms = Array.isArray(club.rooms) && club.rooms.length ? club.rooms : [
+		{ id: `${club.id}:book-recs`, name: "Book Recs", icon: "book-open", messageCount: 0 },
+		{ id: `${club.id}:intros`, name: "Intros", icon: "hand", messageCount: 0 },
+		{ id: `${club.id}:lobby`, name: "Lobby", icon: "building-2", messageCount: 0 },
+		{ id: `${club.id}:reading-vlogs`, name: "Reading vlogs", icon: "camera", messageCount: 0 }
+	];
+	const lobbyRoom = rooms.find((room) => room.slug === "lobby") || rooms[0];
 	return `<section class="club-workspace-hero">
 		<div><span class="section-kicker">Book club</span><h3>${escapeHtml(club.name)}</h3><p>${club.members.length} member${club.members.length === 1 ? "" : "s"} reading together</p></div>
-		<button class="club-chat-btn" type="button" data-club-open-chat="true"><i data-lucide="messages-square" aria-hidden="true"></i><span>Open group chat</span></button>
+		<button class="club-chat-btn" type="button" data-club-open-chat="true" data-club-room-id="${escapeHtml(lobbyRoom.id)}"><i data-lucide="messages-square" aria-hidden="true"></i><span>Open group chat</span></button>
 	</section>
+	<section class="club-room-list"><div class="club-room-list-heading"><h3>Chat Rooms</h3><i data-lucide="chevron-down" aria-hidden="true"></i></div>${rooms.map((room) => `<button class="club-room-row ${room.id === state.activeClubRoomId ? "active" : ""}" type="button" data-club-open-chat="true" data-club-room-id="${escapeHtml(room.id)}"><span class="club-room-icon"><i data-lucide="${escapeHtml(room.icon || "messages-square")}" aria-hidden="true"></i></span><strong>${escapeHtml(room.name)}</strong>${room.messageCount ? `<span class="club-room-count">${Number(room.messageCount) > 999 ? "999+" : Number(room.messageCount)}</span>` : ""}</button>`).join("")}</section>
 	<section class="club-workspace-section"><h3>Invite members</h3>${isOwner ? `<form data-club-action="invite" class="club-inline-form"><select name="userId" required><option value="">Choose a friend</option>${availableFriends.map((friend) => `<option value="${friend.id}">${escapeHtml(friend.email)}</option>`).join("")}</select><button class="btn-sub" type="submit">Invite</button></form>` : '<p class="hint">Only the club owner can invite members.</p>'}</section>
 	<section class="club-workspace-section"><h3>Reading list</h3>${isOwner || state.currentUser ? `<form data-club-action="add-book" class="club-inline-form"><select name="bookId" required><option value="">Add one of your books</option>${state.books.map((book) => `<option value="${book.id}">${escapeHtml(book.title)}</option>`).join("")}</select><button class="btn-sub" type="submit">Add book</button></form>` : ""}<div class="club-reading-list">${books.length ? books.map((book) => `<div class="club-reading-item"><div><strong>${escapeHtml(book.title)}</strong>${book.isBookOfMonth ? `<span class="pill">Book of the month</span>` : ""}<span class="meta">Your progress: ${book.progress}%</span></div><label>Progress <input type="number" min="0" max="100" value="${book.progress}" data-club-progress="${book.id}"></label>${isOwner ? `<button class="btn-sub" type="button" data-club-book-month="${book.id}">Choose month</button>` : ""}</div>`).join("") : '<p class="hint">No books on the reading list yet.</p>'}</div></section>
 	<section class="club-workspace-section chapter-room-section"><h3>Chapter comments</h3><form data-club-action="chapter-discussion" class="chapter-discussion-form"><select name="bookTitle" aria-label="Book for chapter comment"><option value="">General book</option>${bookOptions.map((book) => `<option value="${escapeHtml(book.title)}">${escapeHtml(book.title)}</option>`).join("")}</select><input name="chapterNumber" inputmode="numeric" maxlength="20" placeholder="Chapter"><textarea name="text" rows="3" maxlength="2000" required placeholder="Comment on this chapter..."></textarea><button class="btn-main" type="submit">Post Chapter Comment</button></form><div class="chapter-discussion-grid">${chapterThreads.length ? chapterThreads.map((discussion) => renderClubDiscussionCard(discussion, repliesByParent.get(discussion.id) || [])).join("") : '<p class="hint">No chapter comments yet.</p>'}</div></section>
@@ -796,7 +808,7 @@ refs.bookClubsList.addEventListener("click", (event) => {
 		return;
 	}
 	if (button.dataset.action === "open-club-chat") {
-		setActiveClub(button.dataset.id || "");
+		setActiveClub(button.dataset.id || "", button.dataset.roomId || "");
 		return;
 	}
 	if (button.dataset.action !== "delete-club" || !window.confirm("Delete this book club?")) return;
@@ -834,7 +846,7 @@ refs.clubWorkspaceContent.addEventListener("click", (event) => {
 	const openChat = target.closest("[data-club-open-chat]");
 	if (openChat && state.activeClubId) {
 		refs.clubWorkspaceDialog.close();
-		setActiveClub(state.activeClubId);
+		setActiveClub(state.activeClubId, openChat.dataset.clubRoomId || state.activeClubRoomId);
 		return;
 	}
 	const month = target.closest("[data-club-book-month]");
@@ -1478,7 +1490,7 @@ refs.chatForm.addEventListener("submit", (event) => {
 		try {
 			await apiRequest(state.chatMode === "club" ? `/book-clubs/${encodeURIComponent(state.activeClubId)}/messages` : "/chat/messages", {
 				method: "POST",
-				body: JSON.stringify(state.chatMode === "club" ? { text } : { friendId: state.activeFriendId, text })
+				body: JSON.stringify(state.chatMode === "club" ? { roomId: state.activeClubRoomId, text } : { friendId: state.activeFriendId, text })
 			});
 			refs.chatText.value = "";
 			if (state.chatMode === "club") {

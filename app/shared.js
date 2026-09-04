@@ -58,6 +58,7 @@ export const state = {
 	outgoingFriendRequests: [],
 	activeFriendId: "",
 	activeClubId: "",
+	activeClubRoomId: "",
 	chatMode: "direct",
 	chatMessages: [],
 	chatLoadError: "",

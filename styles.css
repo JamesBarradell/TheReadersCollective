@@ -1040,6 +1040,54 @@ body {
 	color: var(--ink);
 }
 
+.club-room-preview {
+	display: grid;
+	gap: 0.35rem;
+	padding: 0.5rem;
+	border-radius: 12px;
+	background: rgba(31, 42, 53, 0.06);
+}
+
+.club-room-preview button,
+.club-room-row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 0.65rem;
+	width: 100%;
+	padding: 0.45rem 0.5rem;
+	border-radius: 10px;
+	background: transparent;
+	color: var(--ink);
+	text-align: left;
+}
+
+.club-room-preview button > span:first-child,
+.club-room-row > strong {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.55rem;
+	min-width: 0;
+}
+
+.club-room-preview svg {
+	width: 18px;
+	height: 18px;
+}
+
+.club-room-count {
+	display: inline-grid;
+	place-items: center;
+	min-width: 2.25rem;
+	height: 1.55rem;
+	padding: 0 0.55rem;
+	border-radius: 999px;
+	background: #cf6698;
+	color: #fff;
+	font-size: 0.78rem;
+	font-weight: 700;
+}
+
 .club-invitations,
 .club-workspace-content {
 	display: grid;
@@ -1048,6 +1096,64 @@ body {
 
 .club-workspace-dialog {
 	width: min(820px, calc(100% - 2rem));
+}
+
+.club-workspace-dialog .dialog-heading {
+	padding: 0.2rem 0.2rem 0.55rem;
+}
+
+.club-workspace-dialog .dialog-heading h2 {
+	font-size: clamp(1.65rem, 4vw, 2.6rem);
+}
+
+.club-room-list {
+	display: grid;
+	gap: 0.55rem;
+	padding: 0.9rem;
+	border-radius: 14px;
+	background: rgba(31, 42, 53, 0.08);
+}
+
+.club-room-list-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.8rem;
+	margin-bottom: 0.2rem;
+}
+
+.club-room-list-heading h3 {
+	font-size: 1rem;
+}
+
+.club-room-list-heading svg {
+	width: 18px;
+	height: 18px;
+}
+
+.club-room-row {
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	padding: 0.55rem 0.35rem;
+}
+
+.club-room-row.active {
+	background: rgba(19, 111, 99, 0.1);
+}
+
+.club-room-icon {
+	display: inline-grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	background: rgba(31, 42, 53, 0.13);
+	color: var(--ink);
+	font-weight: 700;
+}
+
+.club-room-icon svg {
+	width: 19px;
+	height: 19px;
 }
 
 .club-invitation,
@@ -3045,9 +3151,37 @@ button.month-count.selected strong {
 	background: rgba(224, 152, 47, 0.08);
 }
 
+[data-theme="dark"] .book-clubs-hub,
+[data-theme="dark"] .friends-hub,
+[data-theme="dark"] .community-chat-room,
+[data-theme="dark"] .club-workspace-dialog {
+	border-color: rgba(255, 255, 255, 0.08);
+	background: rgba(18, 18, 20, 0.88);
+}
+
 [data-theme="dark"] .book-club-card {
-	border-color: rgba(150, 130, 210, 0.35);
-	background: rgba(150, 130, 210, 0.1);
+	border-color: rgba(255, 255, 255, 0.1);
+	border-left-color: #cf6698;
+	background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .club-room-preview,
+[data-theme="dark"] .club-room-list {
+	background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .club-workspace-hero {
+	border-color: rgba(255, 255, 255, 0.08);
+	background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(207, 102, 152, 0.12));
+}
+
+[data-theme="dark"] .club-room-icon {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+}
+
+[data-theme="dark"] .club-room-row.active {
+	background: rgba(207, 102, 152, 0.14);
 }
 
 [data-theme="dark"] .recommendation-item {

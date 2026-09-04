@@ -329,18 +329,19 @@ export function renderChatMessages() {
 			refs.chatText.disabled = true;
 			return;
 		}
-		refs.chatRoomTitle.textContent = `${activeClub.name} group chat`;
+		const activeRoom = (activeClub.rooms || []).find((room) => room.id === state.activeClubRoomId) || (activeClub.rooms || []).find((room) => room.slug === "lobby");
+		refs.chatRoomTitle.textContent = `${activeClub.name}${activeRoom ? ` · ${activeRoom.name}` : " group chat"}`;
 		refs.chatText.disabled = false;
 		if (!state.chatMessages.length) {
-			refs.chatMessages.innerHTML = '<div class="chat-empty">No group messages yet. Start the conversation.</div>';
-			refs.chatStatus.textContent = state.chatLoadError || "Your group chat is empty.";
+			refs.chatMessages.innerHTML = '<div class="chat-empty">No messages in this room yet. Start the conversation.</div>';
+			refs.chatStatus.textContent = state.chatLoadError || "This room is empty.";
 			return;
 		}
 		refs.chatMessages.innerHTML = state.chatMessages.map((message) => {
 			const mine = message.fromUserId === state.currentUser.id;
 			return `<div class="chat-bubble ${mine ? "me" : "them"}"><div class="who">${escapeHtml(mine ? "You" : message.fromEmail || "Club member")}</div><div>${escapeHtml(message.text || "")}</div><div class="when">${escapeHtml(formatChatTime(message.createdAt))}</div></div>`;
 		}).join("");
-		refs.chatStatus.textContent = "Messages are visible to club members.";
+		refs.chatStatus.textContent = "Messages are visible to club members in this room.";
 		return;
 	}
 
@@ -391,8 +392,9 @@ export function renderBookClubs() {
 		refs.bookClubsList.innerHTML = state.bookClubs.map((club) => `
 			<article class="book-club-card ${club.id === state.activeClubId ? "active" : ""}">
 				<div class="book-club-heading"><div><span class="section-kicker">Book club</span><h3>${escapeHtml(club.name)}</h3><p>${club.members.length} member${club.members.length === 1 ? "" : "s"} in this room</p></div>${club.ownerId === state.currentUser.id ? `<button class="icon-btn remove-club" type="button" data-action="delete-club" data-id="${club.id}" aria-label="Delete ${escapeHtml(club.name)}" title="Delete club"><i data-lucide="trash-2" aria-hidden="true"></i></button>` : ""}</div>
+				<div class="club-room-preview">${(club.rooms || []).slice(0, 4).map((room) => `<button type="button" data-action="open-club-chat" data-id="${club.id}" data-room-id="${room.id}"><span><i data-lucide="${escapeHtml(room.icon || "messages-square")}" aria-hidden="true"></i>${escapeHtml(room.name)}</span>${room.messageCount ? `<span class="club-room-count">${Number(room.messageCount) > 999 ? "999+" : Number(room.messageCount)}</span>` : ""}</button>`).join("")}</div>
 				<div class="club-room-actions">
-					<button class="club-chat-btn" type="button" data-action="open-club-chat" data-id="${club.id}"><i data-lucide="messages-square" aria-hidden="true"></i><span>Group chat</span></button>
+					<button class="club-chat-btn" type="button" data-action="open-club-chat" data-id="${club.id}" data-room-id="${club.id}:lobby"><i data-lucide="messages-square" aria-hidden="true"></i><span>Lobby chat</span></button>
 					<button class="club-chat-btn chapter-room-btn" type="button" data-action="open-club-workspace" data-id="${club.id}"><i data-lucide="book-marked" aria-hidden="true"></i><span>Chapter rooms</span></button>
 				</div>
 				<div class="club-members" aria-label="${escapeHtml(club.name)} members">${club.members.map((member) => `<span>${escapeHtml(member.email)}</span>`).join("")}</div>

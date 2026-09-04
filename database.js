@@ -80,11 +80,23 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS book_club_messages (
     id TEXT PRIMARY KEY,
     club_id TEXT NOT NULL REFERENCES book_clubs(id) ON DELETE CASCADE,
+    room_id TEXT REFERENCES book_club_rooms(id) ON DELETE CASCADE,
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     text TEXT NOT NULL,
     created_at INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS book_club_messages_club_idx ON book_club_messages(club_id, created_at);
+  CREATE INDEX IF NOT EXISTS book_club_messages_room_idx ON book_club_messages(club_id, room_id, created_at);
+  CREATE TABLE IF NOT EXISTS book_club_rooms (
+    id TEXT PRIMARY KEY,
+    club_id TEXT NOT NULL REFERENCES book_clubs(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL,
+    icon TEXT NOT NULL DEFAULT 'messages-square',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    UNIQUE (club_id, slug)
+  );
   CREATE TABLE IF NOT EXISTS book_club_invitations (
     club_id TEXT NOT NULL REFERENCES book_clubs(id) ON DELETE CASCADE,
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -174,6 +186,32 @@ addColumnIfMissing("users", "reading_reminders_enabled", "reading_reminders_enab
 addColumnIfMissing("users", "username", "username TEXT NOT NULL DEFAULT ''");
 addColumnIfMissing("users", "profile_books_visible", "profile_books_visible INTEGER NOT NULL DEFAULT 1");
 addColumnIfMissing("users", "profile_activity_visible", "profile_activity_visible INTEGER NOT NULL DEFAULT 1");
+addColumnIfMissing("book_club_messages", "room_id", "room_id TEXT");
+
+const DEFAULT_BOOK_CLUB_ROOMS = [
+  { slug: "book-recs", name: "Book Recs", icon: "book-open", sortOrder: 10 },
+  { slug: "intros", name: "Intros", icon: "hand", sortOrder: 20 },
+  { slug: "lobby", name: "Lobby", icon: "building-2", sortOrder: 30 },
+  { slug: "reading-vlogs", name: "Reading vlogs", icon: "camera", sortOrder: 40 }
+];
+
+function ensureDefaultClubRooms() {
+  const insertRoom = db.prepare("INSERT OR IGNORE INTO book_club_rooms (id, club_id, name, slug, icon, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
+  const clubs = db.prepare("SELECT id, created_at AS createdAt FROM book_clubs").all();
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    for (const club of clubs) {
+      for (const room of DEFAULT_BOOK_CLUB_ROOMS) {
+        insertRoom.run(`${club.id}:${room.slug}`, club.id, room.name, room.slug, room.icon, room.sortOrder, club.createdAt || Date.now());
+      }
+    }
+    db.prepare("UPDATE book_club_messages SET room_id = club_id || ':lobby' WHERE room_id IS NULL OR room_id = ''").run();
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+}
 
 function importLegacyJson() {
   const existing = db.prepare("SELECT COUNT(*) AS count FROM users").get().count;
@@ -197,4 +235,5 @@ function importLegacyJson() {
 }
 
 importLegacyJson();
+ensureDefaultClubRooms();
 module.exports = db;

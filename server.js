@@ -75,6 +75,21 @@ function csvCell(value) { const text = String(value ?? ""); const safe = /^[=+\-
 function tokenFor(user) { return jwt.sign({ sub: user.id, version: user.token_version }, JWT_SECRET, { expiresIn: "7d" }); }
 function getUser(id) { return db.prepare("SELECT * FROM users WHERE id = ?").get(id); }
 function logActivity(userId, activityType, bookId, title) { db.prepare("INSERT INTO reading_activity (id, user_id, activity_type, book_id, title, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(crypto.randomUUID(), userId, activityType, bookId || null, clean(title, 200), Date.now()); }
+const DEFAULT_BOOK_CLUB_ROOMS = [
+  { slug: "book-recs", name: "Book Recs", icon: "book-open", sortOrder: 10 },
+  { slug: "intros", name: "Intros", icon: "hand", sortOrder: 20 },
+  { slug: "lobby", name: "Lobby", icon: "building-2", sortOrder: 30 },
+  { slug: "reading-vlogs", name: "Reading vlogs", icon: "camera", sortOrder: 40 }
+];
+function createDefaultClubRooms(clubId, createdAt = Date.now()) {
+  const insertRoom = db.prepare("INSERT OR IGNORE INTO book_club_rooms (id, club_id, name, slug, icon, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
+  for (const room of DEFAULT_BOOK_CLUB_ROOMS) insertRoom.run(`${clubId}:${room.slug}`, clubId, room.name, room.slug, room.icon, room.sortOrder, createdAt);
+}
+function clubRoomForRequest(clubId, roomId) {
+  createDefaultClubRooms(clubId);
+  const requested = clean(roomId, 96) || `${clubId}:lobby`;
+  return db.prepare("SELECT id, name, slug, icon FROM book_club_rooms WHERE club_id = ? AND (id = ? OR slug = ?)").get(clubId, requested, requested) || db.prepare("SELECT id, name, slug, icon FROM book_club_rooms WHERE club_id = ? AND slug = 'lobby'").get(clubId);
+}
 function authRequired(req, res, next) {
   const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
   if (!token) return res.status(401).json({ message: "Missing authorization token." });
@@ -467,7 +482,8 @@ function isFriend(userId, friendId) { return Boolean(db.prepare("SELECT 1 FROM f
 app.get("/api/book-clubs", authRequired, (req, res) => {
   const clubs = db.prepare("SELECT c.id, c.name, c.owner_id AS ownerId, c.created_at AS createdAt FROM book_clubs c JOIN book_club_members m ON m.club_id = c.id WHERE m.user_id = ? ORDER BY c.created_at DESC").all(req.authUser.id);
   const membersForClub = db.prepare("SELECT u.id, u.email, u.avatar_url AS avatarUrl FROM book_club_members m JOIN users u ON u.id = m.user_id WHERE m.club_id = ? ORDER BY u.email");
-  return res.json({ clubs: clubs.map((club) => ({ ...club, members: membersForClub.all(club.id) })) });
+  const roomsForClub = db.prepare("SELECT r.id, r.name, r.slug, r.icon, COUNT(m.id) AS messageCount FROM book_club_rooms r LEFT JOIN book_club_messages m ON m.room_id = r.id WHERE r.club_id = ? GROUP BY r.id ORDER BY r.sort_order, r.name");
+  return res.json({ clubs: clubs.map((club) => { createDefaultClubRooms(club.id, club.createdAt); return { ...club, members: membersForClub.all(club.id), rooms: roomsForClub.all(club.id) }; }) });
 });
 app.post("/api/book-clubs", authRequired, writeLimit, (req, res) => {
   const name = clean(req.body.name, 80);
@@ -479,6 +495,7 @@ app.post("/api/book-clubs", authRequired, writeLimit, (req, res) => {
   db.exec("BEGIN IMMEDIATE");
   try {
     db.prepare("INSERT INTO book_clubs (id, owner_id, name, created_at) VALUES (?, ?, ?, ?)").run(club.id, club.ownerId, club.name, club.createdAt);
+    createDefaultClubRooms(club.id, club.createdAt);
     const addMember = db.prepare("INSERT INTO book_club_members (club_id, user_id, joined_at) VALUES (?, ?, ?)");
     for (const memberId of [club.ownerId, ...memberIds]) addMember.run(club.id, memberId, club.createdAt);
     db.exec("COMMIT");
@@ -507,15 +524,19 @@ app.delete("/api/book-clubs/:id/membership", authRequired, writeLimit, (req, res
 app.get("/api/book-clubs/:id/messages", authRequired, (req, res) => {
   const clubId = clean(req.params.id, 64);
   if (!isClubMember(clubId, req.authUser.id)) return res.status(403).json({ message: "You are not a member of this book club." });
-  const messages = db.prepare("SELECT m.id, m.user_id AS fromUserId, u.email AS fromEmail, m.text, m.created_at AS createdAt FROM book_club_messages m JOIN users u ON u.id = m.user_id WHERE m.club_id = ? ORDER BY m.created_at").all(clubId);
-  return res.json({ messages });
+  const room = clubRoomForRequest(clubId, req.query.roomId);
+  if (!room) return res.status(404).json({ message: "Chat room not found." });
+  const messages = db.prepare("SELECT m.id, m.room_id AS roomId, r.name AS roomName, m.user_id AS fromUserId, u.email AS fromEmail, m.text, m.created_at AS createdAt FROM book_club_messages m JOIN users u ON u.id = m.user_id JOIN book_club_rooms r ON r.id = m.room_id WHERE m.club_id = ? AND m.room_id = ? ORDER BY m.created_at").all(clubId, room.id);
+  return res.json({ room, messages });
 });
 app.post("/api/book-clubs/:id/messages", authRequired, writeLimit, (req, res) => {
   const clubId = clean(req.params.id, 64); const text = clean(req.body.text, 2000);
   if (!text) return res.status(400).json({ message: "Message text is required." });
   if (!isClubMember(clubId, req.authUser.id)) return res.status(403).json({ message: "You are not a member of this book club." });
-  const message = { id: crypto.randomUUID(), fromUserId: req.authUser.id, text, createdAt: Date.now() };
-  db.prepare("INSERT INTO book_club_messages (id, club_id, user_id, text, created_at) VALUES (?, ?, ?, ?, ?)").run(message.id, clubId, message.fromUserId, message.text, message.createdAt);
+  const room = clubRoomForRequest(clubId, req.body.roomId);
+  if (!room) return res.status(404).json({ message: "Chat room not found." });
+  const message = { id: crypto.randomUUID(), roomId: room.id, roomName: room.name, fromUserId: req.authUser.id, text, createdAt: Date.now() };
+  db.prepare("INSERT INTO book_club_messages (id, club_id, room_id, user_id, text, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(message.id, clubId, message.roomId, message.fromUserId, message.text, message.createdAt);
   return res.status(201).json({ message });
 });
 app.get("/api/friends/:id/profile", authRequired, (req, res) => {
