@@ -86,7 +86,6 @@ db.exec(`
     created_at INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS book_club_messages_club_idx ON book_club_messages(club_id, created_at);
-  CREATE INDEX IF NOT EXISTS book_club_messages_room_idx ON book_club_messages(club_id, room_id, created_at);
   CREATE TABLE IF NOT EXISTS book_club_rooms (
     id TEXT PRIMARY KEY,
     club_id TEXT NOT NULL REFERENCES book_clubs(id) ON DELETE CASCADE,
@@ -187,6 +186,7 @@ addColumnIfMissing("users", "username", "username TEXT NOT NULL DEFAULT ''");
 addColumnIfMissing("users", "profile_books_visible", "profile_books_visible INTEGER NOT NULL DEFAULT 1");
 addColumnIfMissing("users", "profile_activity_visible", "profile_activity_visible INTEGER NOT NULL DEFAULT 1");
 addColumnIfMissing("book_club_messages", "room_id", "room_id TEXT");
+db.exec("CREATE INDEX IF NOT EXISTS book_club_messages_room_idx ON book_club_messages(club_id, room_id, created_at)");
 
 const DEFAULT_BOOK_CLUB_ROOMS = [
   { slug: "book-recs", name: "Book Recs", icon: "book-open", sortOrder: 10 },
