@@ -273,8 +273,12 @@
 		</section>
 
 		<section id="community-view" class="panel app-view" hidden>
+			<div class="community-tabs" role="tablist" aria-label="Community sections">
+				<button class="active" id="community-book-clubs-tab" type="button" role="tab" aria-selected="true" aria-controls="community-book-clubs-panel" data-community-tab="book-clubs">Book Clubs</button>
+				<button id="community-friends-tab" type="button" role="tab" aria-selected="false" aria-controls="community-friends-panel" data-community-tab="friends">Friends</button>
+			</div>
 			<div class="community-shell">
-				<article class="book-clubs-hub" aria-labelledby="book-clubs-title">
+				<article id="community-book-clubs-panel" class="book-clubs-hub" role="tabpanel" aria-labelledby="community-book-clubs-tab" data-community-panel="book-clubs">
 					<div class="community-section-heading">
 						<div>
 							<p class="section-kicker">Reading rooms</p>
@@ -284,9 +288,24 @@
 					</div>
 					<div id="book-clubs-list" class="book-clubs-list"></div>
 					<div id="club-invitations" class="club-invitations"></div>
+					<section class="chat-room club-chat-room" aria-labelledby="club-chat-heading">
+						<h2 id="club-chat-heading" class="card-title">Book Club Chat</h2>
+						<p id="club-chat-room-title" class="hint">Choose a book club room to start chatting.</p>
+						<div id="club-chat-messages" class="chat-messages"></div>
+						<form id="club-chat-form" class="chat-form">
+							<div class="field full">
+								<label for="club-chat-text">Message</label>
+								<textarea id="club-chat-text" name="text" rows="3" placeholder="Write to this club room..."></textarea>
+							</div>
+							<div class="btn-row">
+								<button class="btn-main" type="submit">Send</button>
+							</div>
+							<p id="club-chat-status" class="hint">Pick a book club room before sending a message.</p>
+						</form>
+					</section>
 				</article>
 
-				<aside class="friends-hub" aria-labelledby="friends-title">
+				<aside id="community-friends-panel" class="friends-hub" role="tabpanel" aria-labelledby="community-friends-tab" data-community-panel="friends" hidden>
 					<div class="community-section-heading friends-heading">
 						<div>
 							<p class="section-kicker">People</p>
@@ -296,29 +315,28 @@
 					</div>
 					<p class="hint">Send a request by email. Profiles and private chat open after you both add each other.</p>
 					<div id="friends-list" class="friends-list"></div>
+					<section class="chat-room friend-chat-room" aria-labelledby="friend-chat-heading">
+						<section id="friend-profile" class="friend-profile" aria-live="polite"></section>
+						<h2 id="friend-chat-heading" class="card-title">Friends Chat</h2>
+						<p id="chat-room-title" class="hint">Choose a friend to start chatting.</p>
+						<div id="chat-messages" class="chat-messages"></div>
+						<form id="chat-form" class="chat-form">
+							<div class="field full">
+								<label for="chat-text">Message</label>
+								<textarea id="chat-text" name="text" rows="3" placeholder="Write something friendly..."></textarea>
+							</div>
+							<div class="btn-row">
+								<button class="btn-main" type="submit">Send</button>
+							</div>
+							<p id="chat-status" class="hint">Pick a friend before sending a message.</p>
+						</form>
+					</section>
 					<section class="recommendations-panel" aria-labelledby="recommendations-title">
 						<h2 id="recommendations-title" class="card-title">Recommended To You</h2>
 						<div id="recommendations-list" class="recommendations-list"></div>
 					</section>
 					<section class="activity-panel" aria-labelledby="activity-title"><h2 id="activity-title" class="card-title">Friends Activity</h2><div id="activity-list" class="activity-list"></div></section>
 				</aside>
-
-				<article class="chat-room community-chat-room">
-					<section id="friend-profile" class="friend-profile" aria-live="polite"></section>
-					<h2 class="card-title">Chat Room</h2>
-					<p id="chat-room-title" class="hint">Choose a friend to start chatting.</p>
-					<div id="chat-messages" class="chat-messages"></div>
-					<form id="chat-form" class="chat-form">
-						<div class="field full">
-							<label for="chat-text">Message</label>
-							<textarea id="chat-text" name="text" rows="3" placeholder="Write something friendly..."></textarea>
-						</div>
-						<div class="btn-row">
-							<button class="btn-main" type="submit">Send</button>
-						</div>
-						<p id="chat-status" class="hint">Pick a friend before sending a message.</p>
-					</form>
-				</article>
 			</div>
 		</section>
 	</main>
@@ -570,6 +588,6 @@
 	</dialog>
 	<div id="app-notice" class="app-notice" role="status" aria-live="polite"></div>
 
-	<script type="module" src="app.js?v=20260902-auth1"></script>
+	<script type="module" src="app.js?v=20260904-chapter-room-window2"></script>
 </body>
 </html>

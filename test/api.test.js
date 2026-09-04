@@ -307,6 +307,9 @@ test("book clubs support multiple friends and restrict membership and deletion",
   await addFriend(owner, firstFriend);
   await addFriend(owner, secondFriend);
   await request(app).post("/api/book-clubs").set("Authorization", `Bearer ${owner.token}`).send({ name: "Invalid club", memberIds: [outsider.user.id] }).expect(400);
+  const soloClub = await request(app).post("/api/book-clubs").set("Authorization", `Bearer ${owner.token}`).send({ name: "Solo Setup", memberIds: [] }).expect(201);
+  const ownerClubs = await request(app).get("/api/book-clubs").set("Authorization", `Bearer ${owner.token}`).expect(200);
+  assert.equal(ownerClubs.body.clubs.find((entry) => entry.id === soloClub.body.club.id).members.length, 1);
   const club = await request(app).post("/api/book-clubs").set("Authorization", `Bearer ${owner.token}`).send({ name: "Weekend Readers", memberIds: [firstFriend.user.id, secondFriend.user.id] }).expect(201);
   const clubs = await request(app).get("/api/book-clubs").set("Authorization", `Bearer ${firstFriend.token}`).expect(200);
   assert.equal(clubs.body.clubs[0].members.length, 3);
@@ -340,8 +343,6 @@ test("book clubs support invitations, reading lists, discussions, progress, and 
   const owner = await register("club-upgrade-owner@example.com");
   const member = await register("club-upgrade-member@example.com");
   await addFriend(owner, member);
-  const club = await request(app).post("/api/book-clubs").set("Authorization", `Bearer ${owner.token}`).send({ name: "Reading Lab", memberIds: [] }).expect(400);
-  assert.equal(club.status, 400);
   const created = await request(app).post("/api/book-clubs").set("Authorization", `Bearer ${owner.token}`).send({ name: "Reading Lab", memberIds: [member.user.id] }).expect(201);
   const book = await request(app).post("/api/books").set("Authorization", `Bearer ${owner.token}`).send({ title: "Club Pick" }).expect(201);
   await request(app).post(`/api/book-clubs/${created.body.club.id}/books`).set("Authorization", `Bearer ${owner.token}`).send({ bookId: book.body.book.id }).expect(201);
@@ -349,6 +350,33 @@ test("book clubs support invitations, reading lists, discussions, progress, and 
     await request(app).put(`/api/book-clubs/${created.body.club.id}/books/${book.body.book.id}/progress`).set("Authorization", `Bearer ${owner.token}`).send({ percent: 40 }).expect(200);
   await request(app).post(`/api/book-clubs/${created.body.club.id}/discussions`).set("Authorization", `Bearer ${owner.token}`).send({ text: "What did you think?" }).expect(201);
   await request(app).delete(`/api/book-clubs/${created.body.club.id}/membership`).set("Authorization", `Bearer ${member.token}`).expect(204);
+});
+
+test("book club owners choose the current book and create chapter rooms", async () => {
+  const owner = await register("chapter-room-owner@example.com");
+  const member = await register("chapter-room-member@example.com");
+  await addFriend(owner, member);
+  const club = await request(app).post("/api/book-clubs").set("Authorization", `Bearer ${owner.token}`).send({ name: "Chapter Room Club", memberIds: [member.user.id] }).expect(201);
+  const book = await request(app).post("/api/books").set("Authorization", `Bearer ${owner.token}`).send({ title: "Chaptered Book" }).expect(201);
+  await request(app).put(`/api/book-clubs/${club.body.club.id}/books/${book.body.book.id}/book-of-month`).set("Authorization", `Bearer ${member.token}`).send({ chapterCount: 3 }).expect(403);
+  await request(app).put(`/api/book-clubs/${club.body.club.id}/books/${book.body.book.id}/book-of-month`).set("Authorization", `Bearer ${owner.token}`).send({ chapterCount: 3 }).expect(200);
+  const readingList = await request(app).get(`/api/book-clubs/${club.body.club.id}/books`).set("Authorization", `Bearer ${owner.token}`).expect(200);
+  assert.equal(readingList.body.books[0].id, book.body.book.id);
+  assert.equal(readingList.body.books[0].isBookOfMonth, true);
+  const clubs = await request(app).get("/api/book-clubs").set("Authorization", `Bearer ${member.token}`).expect(200);
+  const chapterRooms = clubs.body.clubs[0].rooms.filter((room) => room.roomType === "chapter" && room.bookId === book.body.book.id);
+  assert.equal(chapterRooms.length, 3);
+  const firstChapter = chapterRooms.find((room) => room.chapterNumber === 1);
+  const secondChapter = chapterRooms.find((room) => room.chapterNumber === 2);
+  assert.ok(firstChapter);
+  assert.ok(secondChapter);
+  await request(app).post(`/api/book-clubs/${club.body.club.id}/messages`).set("Authorization", `Bearer ${member.token}`).send({ roomId: secondChapter.id, text: "Chapter two twist" }).expect(201);
+  const firstMessages = await request(app).get(`/api/book-clubs/${club.body.club.id}/messages?roomId=${encodeURIComponent(firstChapter.id)}`).set("Authorization", `Bearer ${owner.token}`).expect(200);
+  const secondMessages = await request(app).get(`/api/book-clubs/${club.body.club.id}/messages?roomId=${encodeURIComponent(secondChapter.id)}`).set("Authorization", `Bearer ${owner.token}`).expect(200);
+  assert.equal(firstMessages.body.messages.length, 0);
+  assert.equal(secondMessages.body.messages.length, 1);
+  assert.equal(secondMessages.body.room.chapterNumber, 2);
+  await request(app).get(`/api/book-clubs/${club.body.club.id}/messages?roomId=${encodeURIComponent(`${club.body.club.id}:missing-room`)}`).set("Authorization", `Bearer ${owner.token}`).expect(404);
 });
 
 test("message notifications include incoming direct and book-club messages", async () => {

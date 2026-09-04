@@ -89,9 +89,12 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS book_club_rooms (
     id TEXT PRIMARY KEY,
     club_id TEXT NOT NULL REFERENCES book_clubs(id) ON DELETE CASCADE,
+    book_id TEXT REFERENCES books(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     slug TEXT NOT NULL,
     icon TEXT NOT NULL DEFAULT 'messages-square',
+    room_type TEXT NOT NULL DEFAULT 'general',
+    chapter_number INTEGER NOT NULL DEFAULT 0,
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at INTEGER NOT NULL,
     UNIQUE (club_id, slug)
@@ -108,6 +111,7 @@ db.exec(`
     book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
     added_by TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     is_book_of_month INTEGER NOT NULL DEFAULT 0,
+    chapter_count INTEGER NOT NULL DEFAULT 10,
     added_at INTEGER NOT NULL,
     PRIMARY KEY (club_id, book_id)
   );
@@ -186,7 +190,12 @@ addColumnIfMissing("users", "username", "username TEXT NOT NULL DEFAULT ''");
 addColumnIfMissing("users", "profile_books_visible", "profile_books_visible INTEGER NOT NULL DEFAULT 1");
 addColumnIfMissing("users", "profile_activity_visible", "profile_activity_visible INTEGER NOT NULL DEFAULT 1");
 addColumnIfMissing("book_club_messages", "room_id", "room_id TEXT");
+addColumnIfMissing("book_club_rooms", "book_id", "book_id TEXT");
+addColumnIfMissing("book_club_rooms", "room_type", "room_type TEXT NOT NULL DEFAULT 'general'");
+addColumnIfMissing("book_club_rooms", "chapter_number", "chapter_number INTEGER NOT NULL DEFAULT 0");
+addColumnIfMissing("book_club_books", "chapter_count", "chapter_count INTEGER NOT NULL DEFAULT 10");
 db.exec("CREATE INDEX IF NOT EXISTS book_club_messages_room_idx ON book_club_messages(club_id, room_id, created_at)");
+db.exec("CREATE INDEX IF NOT EXISTS book_club_rooms_chapter_idx ON book_club_rooms(club_id, book_id, chapter_number)");
 
 const DEFAULT_BOOK_CLUB_ROOMS = [
   { slug: "book-recs", name: "Book Recs", icon: "book-open", sortOrder: 10 },

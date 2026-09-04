@@ -317,32 +317,33 @@ export function renderChatMessages() {
 		refs.chatMessages.innerHTML = '<div class="chat-empty">Sign in to use chat.</div>';
 		refs.chatStatus.textContent = "Sign in to send messages.";
 		refs.chatText.disabled = true;
+		refs.clubChatRoomTitle.textContent = "Choose a book club room to start chatting.";
+		refs.clubChatMessages.innerHTML = '<div class="chat-empty">Sign in to use club chat.</div>';
+		refs.clubChatStatus.textContent = "Sign in to send club messages.";
+		refs.clubChatText.disabled = true;
 		return;
 	}
 
-	if (state.chatMode === "club") {
-		const activeClub = state.bookClubs.find((club) => club.id === state.activeClubId);
-		if (!activeClub) {
-			refs.chatRoomTitle.textContent = "Choose a club to open its group chat.";
-			refs.chatMessages.innerHTML = '<div class="chat-empty">Pick a book club from the list on the left.</div>';
-			refs.chatStatus.textContent = "Choose a club before sending a message.";
-			refs.chatText.disabled = true;
-			return;
-		}
+	const activeClub = state.bookClubs.find((club) => club.id === state.activeClubId);
+	if (!activeClub) {
+		refs.clubChatRoomTitle.textContent = "Choose a book club room to start chatting.";
+		refs.clubChatMessages.innerHTML = '<div class="chat-empty">Pick a room from a book club.</div>';
+		refs.clubChatStatus.textContent = "Choose a club room before sending a message.";
+		refs.clubChatText.disabled = true;
+	} else {
 		const activeRoom = (activeClub.rooms || []).find((room) => room.id === state.activeClubRoomId) || (activeClub.rooms || []).find((room) => room.slug === "lobby");
-		refs.chatRoomTitle.textContent = `${activeClub.name}${activeRoom ? ` · ${activeRoom.name}` : " group chat"}`;
-		refs.chatText.disabled = false;
-		if (!state.chatMessages.length) {
-			refs.chatMessages.innerHTML = '<div class="chat-empty">No messages in this room yet. Start the conversation.</div>';
-			refs.chatStatus.textContent = state.chatLoadError || "This room is empty.";
-			return;
+		refs.clubChatRoomTitle.textContent = `${activeClub.name}${activeRoom ? ` · ${activeRoom.name}` : " group chat"}`;
+		refs.clubChatText.disabled = false;
+		if (!state.clubChatMessages.length) {
+			refs.clubChatMessages.innerHTML = '<div class="chat-empty">No messages in this room yet. Start the conversation.</div>';
+			refs.clubChatStatus.textContent = state.clubChatLoadError || "This room is empty.";
+		} else {
+			refs.clubChatMessages.innerHTML = state.clubChatMessages.map((message) => {
+				const mine = message.fromUserId === state.currentUser.id;
+				return `<div class="chat-bubble ${mine ? "me" : "them"}"><div class="who">${escapeHtml(mine ? "You" : message.fromEmail || "Club member")}</div><div>${escapeHtml(message.text || "")}</div><div class="when">${escapeHtml(formatChatTime(message.createdAt))}</div></div>`;
+			}).join("");
+			refs.clubChatStatus.textContent = "Messages are visible to club members in this room.";
 		}
-		refs.chatMessages.innerHTML = state.chatMessages.map((message) => {
-			const mine = message.fromUserId === state.currentUser.id;
-			return `<div class="chat-bubble ${mine ? "me" : "them"}"><div class="who">${escapeHtml(mine ? "You" : message.fromEmail || "Club member")}</div><div>${escapeHtml(message.text || "")}</div><div class="when">${escapeHtml(formatChatTime(message.createdAt))}</div></div>`;
-		}).join("");
-		refs.chatStatus.textContent = "Messages are visible to club members in this room.";
-		return;
 	}
 
 	const activeFriend = state.friends.find((friend) => friend.id === state.activeFriendId);
@@ -356,13 +357,13 @@ export function renderChatMessages() {
 
 	refs.chatRoomTitle.textContent = `Chatting with ${friendLabel(activeFriend)}`;
 	refs.chatText.disabled = false;
-	if (!state.chatMessages.length) {
+	if (!state.friendChatMessages.length) {
 		refs.chatMessages.innerHTML = '<div class="chat-empty">No messages yet. Say hello to start the thread.</div>';
-		refs.chatStatus.textContent = state.chatLoadError || "Your conversation is empty.";
+		refs.chatStatus.textContent = state.friendChatLoadError || "Your conversation is empty.";
 		return;
 	}
 
-	refs.chatMessages.innerHTML = state.chatMessages.map((message) => {
+	refs.chatMessages.innerHTML = state.friendChatMessages.map((message) => {
 		const mine = message.fromUserId === state.currentUser.id;
 		const sender = mine ? "You" : friendLabel(activeFriend);
 		return `

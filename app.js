@@ -11,7 +11,9 @@ import {
 	loadAuthToken,
 	apiRequest,
 	showNotice,
-	escapeHtml
+	escapeHtml,
+	getUploadedAssetUrl,
+	formatChatTime
 } from "./app/shared.js";
 import {
 	renderAccountSummary,
@@ -56,6 +58,9 @@ function setAppLockState(isLocked) {
 		element.disabled = isLocked;
 	}
 	for (const element of refs.chatForm.querySelectorAll("input, button, textarea")) {
+		element.disabled = isLocked;
+	}
+	for (const element of refs.clubChatForm.querySelectorAll("input, button, textarea")) {
 		element.disabled = isLocked;
 	}
 	for (const element of refs.readingGoalForm.querySelectorAll("input, button")) {
@@ -236,8 +241,8 @@ if (window.lucide) {
 async function loadChatMessages(friendId) {
 	const activeFriendId = String(friendId || state.activeFriendId || "").trim();
 	if (!state.currentUser || !activeFriendId) {
-		state.chatMessages = [];
-		state.chatLoadError = "";
+		state.friendChatMessages = [];
+		state.friendChatLoadError = "";
 		renderFriendsAndChat();
 		return;
 	}
@@ -247,19 +252,19 @@ async function loadChatMessages(friendId) {
 		if (state.chatMode !== "direct" || state.activeFriendId !== activeFriendId) {
 			return;
 		}
-		state.chatMessages = response && Array.isArray(response.messages) ? response.messages : [];
-		state.chatLoadError = "";
+		state.friendChatMessages = response && Array.isArray(response.messages) ? response.messages : [];
+		state.friendChatLoadError = "";
 	} catch (error) {
-		state.chatMessages = [];
-		state.chatLoadError = error instanceof Error ? error.message : "Unable to load this conversation.";
+		state.friendChatMessages = [];
+		state.friendChatLoadError = error instanceof Error ? error.message : "Unable to load this conversation.";
 	}
 	renderFriendsAndChat();
 }
 
 async function loadClubMessages(clubId) {
 	if (!state.currentUser || !clubId) {
-		state.chatMessages = [];
-		state.chatLoadError = "";
+		state.clubChatMessages = [];
+		state.clubChatLoadError = "";
 		renderFriendsAndChat();
 		return;
 	}
@@ -269,12 +274,16 @@ async function loadClubMessages(clubId) {
 		if (state.chatMode !== "club" || state.activeClubId !== clubId) {
 			return;
 		}
+		if (roomId && response?.room?.id && response.room.id !== roomId) {
+			throw new Error(`Unable to open ${state.activeClubRoomName || "that room"}. The server returned ${response.room.name || "another room"}.`);
+		}
 		state.activeClubRoomId = response && response.room ? response.room.id : roomId;
-		state.chatMessages = response && Array.isArray(response.messages) ? response.messages : [];
-		state.chatLoadError = "";
+		state.activeClubRoomName = response && response.room ? response.room.name : state.activeClubRoomName;
+		state.clubChatMessages = response && Array.isArray(response.messages) ? response.messages : [];
+		state.clubChatLoadError = "";
 	} catch (error) {
-		state.chatMessages = [];
-		state.chatLoadError = error instanceof Error ? error.message : "Unable to load this group chat.";
+		state.clubChatMessages = [];
+		state.clubChatLoadError = error instanceof Error ? error.message : "Unable to load this group chat.";
 	}
 	renderFriendsAndChat();
 }
@@ -320,8 +329,9 @@ function setActiveFriend(friendId) {
 	state.activeFriendId = friendId || "";
 	state.activeClubId = "";
 	state.activeClubRoomId = "";
-	state.chatMessages = [];
-	state.chatLoadError = "";
+	state.activeClubRoomName = "";
+	state.friendChatMessages = [];
+	state.friendChatLoadError = "";
 	state.unreadMessageCount = 0;
 	renderFriendsAndChat();
 	if (state.activeFriendId) {
@@ -338,9 +348,10 @@ function setActiveClub(clubId, roomId = "") {
 	state.chatMode = "club";
 	state.activeClubId = clubId || "";
 	state.activeClubRoomId = roomId || (clubId ? `${clubId}:lobby` : "");
+	state.activeClubRoomName = "";
 	state.activeFriendId = "";
-	state.chatMessages = [];
-	state.chatLoadError = "";
+	state.clubChatMessages = [];
+	state.clubChatLoadError = "";
 	renderFriendProfile(null);
 	renderFriendsAndChat();
 	if (state.activeClubId) {
@@ -457,7 +468,7 @@ async function loadFriendsFromApi() {
 		state.incomingFriendRequests = [];
 		state.outgoingFriendRequests = [];
 		state.activeFriendId = "";
-		state.chatMessages = [];
+		state.friendChatMessages = [];
 		renderFriendsAndChat();
 		return;
 	}
@@ -469,7 +480,7 @@ async function loadFriendsFromApi() {
 	renderFriendRequestNotification();
 	if (state.activeFriendId && !state.friends.some((friend) => friend.id === state.activeFriendId)) {
 		state.activeFriendId = "";
-		state.chatMessages = [];
+		state.friendChatMessages = [];
 	}
 	if (!state.activeFriendId && state.friends.length) {
 		state.activeFriendId = state.friends[0].id;
@@ -547,23 +558,62 @@ function renderClubWorkspaceContent(club, books, discussions, isOwner, available
 	const chapterThreads = threads.filter((discussion) => getChapterLabel(discussion.text));
 	const generalThreads = threads.filter((discussion) => !getChapterLabel(discussion.text));
 	const bookOptions = books.length ? books : state.books;
+	const shelfBookOptions = state.books.filter((book) => book.isOwned !== false);
 	const rooms = Array.isArray(club.rooms) && club.rooms.length ? club.rooms : [
 		{ id: `${club.id}:book-recs`, name: "Book Recs", icon: "book-open", messageCount: 0 },
 		{ id: `${club.id}:intros`, name: "Intros", icon: "hand", messageCount: 0 },
 		{ id: `${club.id}:lobby`, name: "Lobby", icon: "building-2", messageCount: 0 },
 		{ id: `${club.id}:reading-vlogs`, name: "Reading vlogs", icon: "camera", messageCount: 0 }
 	];
+	const generalRooms = rooms.filter((room) => room.roomType !== "chapter");
+	const currentRead = books.find((book) => book.isBookOfMonth) || books[0] || null;
+	let chapterRooms = currentRead
+		? rooms.filter((room) => room.roomType === "chapter" && room.bookId === currentRead.id).sort((left, right) => Number(left.chapterNumber) - Number(right.chapterNumber))
+		: [];
+	if (currentRead && !chapterRooms.length) {
+		const chapterCount = Math.max(1, Math.min(200, Number(currentRead.chapterCount) || 10));
+		chapterRooms = Array.from({ length: chapterCount }, (_, index) => {
+			const number = index + 1;
+			return {
+				id: `${club.id}:${currentRead.id}:chapter-${number}`,
+				name: `Chapter ${number}`,
+				roomType: "chapter",
+				bookId: currentRead.id,
+				chapterNumber: number,
+				messageCount: 0
+			};
+		});
+	}
 	const lobbyRoom = rooms.find((room) => room.slug === "lobby") || rooms[0];
 	return `<section class="club-workspace-hero">
-		<div><span class="section-kicker">Book club</span><h3>${escapeHtml(club.name)}</h3><p>${club.members.length} member${club.members.length === 1 ? "" : "s"} reading together</p></div>
+		<div><span class="section-kicker">What We're Reading</span><h3>${escapeHtml(club.name)}</h3><p>${club.members.length} member${club.members.length === 1 ? "" : "s"} reading together</p></div>
 		<button class="club-chat-btn" type="button" data-club-open-chat="true" data-club-room-id="${escapeHtml(lobbyRoom.id)}"><i data-lucide="messages-square" aria-hidden="true"></i><span>Open group chat</span></button>
 	</section>
-	<section class="club-room-list"><div class="club-room-list-heading"><h3>Chat Rooms</h3><i data-lucide="chevron-down" aria-hidden="true"></i></div>${rooms.map((room) => `<button class="club-room-row ${room.id === state.activeClubRoomId ? "active" : ""}" type="button" data-club-open-chat="true" data-club-room-id="${escapeHtml(room.id)}"><span class="club-room-icon"><i data-lucide="${escapeHtml(room.icon || "messages-square")}" aria-hidden="true"></i></span><strong>${escapeHtml(room.name)}</strong>${room.messageCount ? `<span class="club-room-count">${Number(room.messageCount) > 999 ? "999+" : Number(room.messageCount)}</span>` : ""}</button>`).join("")}</section>
+	<section class="club-room-list"><div class="club-room-list-heading"><h3>Chat Rooms</h3><i data-lucide="chevron-down" aria-hidden="true"></i></div>${generalRooms.map((room) => `<button class="club-room-row ${room.id === state.activeClubRoomId ? "active" : ""}" type="button" data-club-select-room="true" data-club-room-id="${escapeHtml(room.id)}"><span class="club-room-icon"><i data-lucide="${escapeHtml(room.icon || "messages-square")}" aria-hidden="true"></i></span><strong>${escapeHtml(room.name)}</strong>${room.messageCount ? `<span class="club-room-count">${Number(room.messageCount) > 999 ? "999+" : Number(room.messageCount)}</span>` : ""}</button>`).join("")}</section>
+	${currentRead ? `<section class="club-current-read"><div>${currentRead.coverUrl ? `<img src="${escapeHtml(getUploadedAssetUrl(currentRead.coverUrl))}" alt="Cover of ${escapeHtml(currentRead.title)}">` : ""}<span><strong>${escapeHtml(currentRead.title)}</strong>${currentRead.author ? `<small>by ${escapeHtml(currentRead.author)}</small>` : ""}</span></div><b>Currently reading</b></section>` : '<section class="club-current-read empty"><strong>No current read selected</strong><span>The owner can choose one from their shelf.</span></section>'}
+	${isOwner ? `<section class="club-workspace-section current-book-control"><h3>Current book</h3><form data-club-action="current-book" class="club-inline-form"><select name="bookId" required><option value="">Choose current book</option>${shelfBookOptions.map((book) => `<option value="${book.id}" ${currentRead?.id === book.id ? "selected" : ""}>${escapeHtml(book.title)}</option>`).join("")}</select><input name="chapterCount" type="number" min="1" max="200" value="${Number(currentRead?.chapterCount || 10)}" aria-label="Number of chapters"><button class="btn-sub" type="submit">Set current read</button></form>${shelfBookOptions.length ? "" : '<p class="hint">Add a book to your shelf before choosing the current read.</p>'}</section>` : ""}
+	<section class="chapter-milestone-card"><div class="club-room-list-heading"><h3>Milestone 1</h3><span class="milestone-date"><i data-lucide="calendar-days" aria-hidden="true"></i> Sep 01</span></div><button class="club-room-row" type="button" data-club-select-room="true" data-club-room-id="${escapeHtml(chapterRooms[0]?.id || lobbyRoom.id)}"><span class="club-room-icon">#</span><strong>Kickoff</strong><small>${chapterRooms.reduce((sum, room) => sum + Number(room.messageCount || 0), 0)} comments</small><span class="club-room-count">${chapterRooms.reduce((sum, room) => sum + Number(room.messageCount || 0), 0)}</span></button></section>
+	<section class="chapter-safety-note"><button class="icon-btn" type="button" aria-label="Dismiss note" title="Dismiss"><i data-lucide="x" aria-hidden="true"></i></button><div class="chapter-note-avatar"><i data-lucide="book-open-text" aria-hidden="true"></i></div><p>Discussion rooms are structured by chapter to keep readers safe from spoilers. Read at your own pace.</p></section>
+	<section class="club-workspace-section chapter-room-section chapter-directory"><div class="club-room-list-heading"><h3>All chapters</h3><i data-lucide="chevron-down" aria-hidden="true"></i></div><div class="chapter-list">${chapterRooms.length ? chapterRooms.map((room) => `<button class="chapter-row ${room.id === state.activeClubRoomId ? "active" : ""}" type="button" data-club-select-room="true" data-club-room-id="${escapeHtml(room.id)}" data-club-room-name="${escapeHtml(room.name)}"><span class="club-room-icon">#</span><span><strong>${escapeHtml(room.name)}</strong><small>${Number(room.messageCount || 0)} comment${Number(room.messageCount || 0) === 1 ? "" : "s"}</small></span><span class="club-room-count">${Number(room.messageCount || 0)}</span></button>`).join("") : '<p class="hint">Choose a current book to create chapter rooms.</p>'}</div></section>
 	<section class="club-workspace-section"><h3>Invite members</h3>${isOwner ? `<form data-club-action="invite" class="club-inline-form"><select name="userId" required><option value="">Choose a friend</option>${availableFriends.map((friend) => `<option value="${friend.id}">${escapeHtml(friend.email)}</option>`).join("")}</select><button class="btn-sub" type="submit">Invite</button></form>` : '<p class="hint">Only the club owner can invite members.</p>'}</section>
 	<section class="club-workspace-section"><h3>Reading list</h3>${isOwner || state.currentUser ? `<form data-club-action="add-book" class="club-inline-form"><select name="bookId" required><option value="">Add one of your books</option>${state.books.map((book) => `<option value="${book.id}">${escapeHtml(book.title)}</option>`).join("")}</select><button class="btn-sub" type="submit">Add book</button></form>` : ""}<div class="club-reading-list">${books.length ? books.map((book) => `<div class="club-reading-item"><div><strong>${escapeHtml(book.title)}</strong>${book.isBookOfMonth ? `<span class="pill">Book of the month</span>` : ""}<span class="meta">Your progress: ${book.progress}%</span></div><label>Progress <input type="number" min="0" max="100" value="${book.progress}" data-club-progress="${book.id}"></label>${isOwner ? `<button class="btn-sub" type="button" data-club-book-month="${book.id}">Choose month</button>` : ""}</div>`).join("") : '<p class="hint">No books on the reading list yet.</p>'}</div></section>
-	<section class="club-workspace-section chapter-room-section"><h3>Chapter comments</h3><form data-club-action="chapter-discussion" class="chapter-discussion-form"><select name="bookTitle" aria-label="Book for chapter comment"><option value="">General book</option>${bookOptions.map((book) => `<option value="${escapeHtml(book.title)}">${escapeHtml(book.title)}</option>`).join("")}</select><input name="chapterNumber" inputmode="numeric" maxlength="20" placeholder="Chapter"><textarea name="text" rows="3" maxlength="2000" required placeholder="Comment on this chapter..."></textarea><button class="btn-main" type="submit">Post Chapter Comment</button></form><div class="chapter-discussion-grid">${chapterThreads.length ? chapterThreads.map((discussion) => renderClubDiscussionCard(discussion, repliesByParent.get(discussion.id) || [])).join("") : '<p class="hint">No chapter comments yet.</p>'}</div></section>
 	<section class="club-workspace-section"><h3>Members</h3><div class="club-workspace-members">${club.members.map((member) => `<span>${escapeHtml(member.email)}${isOwner && member.id !== state.currentUser.id ? ` <button type="button" data-club-remove-member="${member.id}" aria-label="Remove ${escapeHtml(member.email)}">Remove</button>` : ""}</span>`).join("")}</div>${!isOwner ? `<button class="btn-sub" type="button" data-club-leave="true">Leave club</button>` : ""}</section>
 	<section class="club-workspace-section"><h3>General discussion</h3><div class="club-discussions">${generalThreads.length ? generalThreads.map((discussion) => renderClubDiscussionCard(discussion, repliesByParent.get(discussion.id) || [])).join("") : '<p class="hint">Start the discussion.</p>'}</div><form data-club-action="discussion" class="club-discussion-form"><input type="hidden" name="parentId"><textarea name="text" rows="3" maxlength="2000" required placeholder="Start a discussion..."></textarea><button class="btn-main" type="submit">Post</button></form></section>`;
+}
+
+function renderClubRoomChatWindow(club) {
+	const rooms = Array.isArray(club.rooms) ? club.rooms : [];
+	const room = rooms.find((entry) => entry.id === state.activeClubRoomId);
+	const roomName = room?.name || state.activeClubRoomName || "Club room";
+	refs.clubWorkspaceTitle.textContent = roomName;
+	refs.clubWorkspaceContent.innerHTML = `<section class="club-room-window">
+		<div class="club-room-window-top"><button class="icon-btn" type="button" data-club-back-workspace="true" aria-label="Back to chapter rooms" title="Back to chapter rooms"><i data-lucide="arrow-left" aria-hidden="true"></i></button><div><span class="section-kicker">${escapeHtml(club.name)}</span><h3>${escapeHtml(roomName)}</h3></div></div>
+		<div class="chat-messages">${state.clubChatMessages.length ? state.clubChatMessages.map((message) => { const mine = message.fromUserId === state.currentUser.id; return `<div class="chat-bubble ${mine ? "me" : "them"}"><div class="who">${escapeHtml(mine ? "You" : message.fromEmail || "Club member")}</div><div>${escapeHtml(message.text || "")}</div><div class="when">${escapeHtml(formatChatTime(message.createdAt))}</div></div>`; }).join("") : '<div class="chat-empty">No messages in this room yet. Start the conversation.</div>'}</div>
+		<form data-club-action="room-message" class="chat-form"><div class="field full"><label for="club-workspace-message">Message</label><textarea id="club-workspace-message" name="text" rows="3" maxlength="2000" required placeholder="Write to this room..."></textarea></div><div class="btn-row"><button class="btn-main" type="submit">Send</button></div></form>
+	</section>`;
+	if (window.lucide) {
+		window.lucide.createIcons({ nodes: [refs.clubWorkspaceContent] });
+	}
 }
 
 async function openClubWorkspace(clubId) {
@@ -661,8 +711,12 @@ function clearSession(message) {
 	state.outgoingFriendRequests = [];
 	renderFriendRequestNotification();
 	state.activeFriendId = "";
-	state.chatMessages = [];
-	state.chatLoadError = "";
+	state.activeClubId = "";
+	state.activeClubRoomId = "";
+	state.friendChatMessages = [];
+	state.clubChatMessages = [];
+	state.friendChatLoadError = "";
+	state.clubChatLoadError = "";
 	state.editingBookId = "";
 	state.trinkets = [];
 	if (refs.friendEmail) {
@@ -670,6 +724,9 @@ function clearSession(message) {
 	}
 	if (refs.chatText) {
 		refs.chatText.value = "";
+	}
+	if (refs.clubChatText) {
+		refs.clubChatText.value = "";
 	}
 	clearSearchUi("");
 	setCurrentUser(null);
@@ -776,17 +833,15 @@ refs.settingsBtn.addEventListener("click", () => {
 refs.openClubDialog.addEventListener("click", () => {
 	refs.clubName.value = "";
 	refs.bookClubStatus.textContent = "";
-	refs.clubMemberOptions.innerHTML = state.friends.map((friend) => `<label class="checkbox-row"><input type="checkbox" name="memberId" value="${friend.id}">${friend.email}</label>`).join("");
+	refs.clubMemberOptions.innerHTML = state.friends.length
+		? state.friends.map((friend) => `<label class="checkbox-row"><input type="checkbox" name="memberId" value="${friend.id}">${friend.email}</label>`).join("")
+		: '<p class="hint">You can create the club now and invite friends later.</p>';
 	refs.bookClubDialog.showModal();
 });
 
 refs.bookClubForm.addEventListener("submit", (event) => {
 	event.preventDefault();
 	const memberIds = [...refs.bookClubForm.querySelectorAll("input[name='memberId']:checked")].map((input) => input.value);
-	if (!memberIds.length) {
-		refs.bookClubStatus.textContent = "Choose at least one friend.";
-		return;
-	}
 	(async () => {
 		try {
 			const response = await apiRequest("/book-clubs", { method: "POST", body: JSON.stringify({ name: refs.clubName.value, memberIds }) });
@@ -835,12 +890,33 @@ refs.clubInvitations.addEventListener("click", (event) => {
 refs.clubWorkspaceContent.addEventListener("click", (event) => {
 	const target = event.target instanceof HTMLElement ? event.target : null;
 	if (!target) return;
+	const back = target.closest("[data-club-back-workspace]");
+	if (back && state.activeClubId) {
+		openClubWorkspace(state.activeClubId).catch((error) => showNotice(error instanceof Error ? error.message : "Unable to return to chapter rooms."));
+		return;
+	}
 	const reply = target.closest("[data-club-reply]");
 	if (reply) {
 		const parent = refs.clubWorkspaceContent.querySelector("[name='parentId']");
 		if (parent instanceof HTMLInputElement) parent.value = reply.dataset.clubReply || "";
 		const text = refs.clubWorkspaceContent.querySelector("[name='text']");
 		if (text instanceof HTMLTextAreaElement) text.focus();
+		return;
+	}
+	const selectRoom = target.closest("[data-club-select-room]");
+	if (selectRoom && state.activeClubId) {
+		(async () => {
+			state.chatMode = "club";
+			state.activeClubRoomId = selectRoom.dataset.clubRoomId || state.activeClubRoomId;
+			state.activeClubRoomName = selectRoom.dataset.clubRoomName || "";
+			state.activeFriendId = "";
+			state.clubChatMessages = [];
+			state.clubChatLoadError = "";
+			renderFriendsAndChat();
+			await loadClubMessages(state.activeClubId);
+			const club = state.bookClubs.find((entry) => entry.id === state.activeClubId);
+			if (club) renderClubRoomChatWindow(club);
+		})().catch((error) => showNotice(error instanceof Error ? error.message : "Unable to select this room."));
 		return;
 	}
 	const openChat = target.closest("[data-club-open-chat]");
@@ -850,7 +926,7 @@ refs.clubWorkspaceContent.addEventListener("click", (event) => {
 		return;
 	}
 	const month = target.closest("[data-club-book-month]");
-	if (month) apiRequest(`/book-clubs/${encodeURIComponent(state.activeClubId || "")}/books/${encodeURIComponent(month.dataset.clubBookMonth || "")}/book-of-month`, { method: "PUT" }).then(() => openClubWorkspace(state.activeClubId)).catch((error) => showNotice(error instanceof Error ? error.message : "Unable to choose the book of the month."));
+	if (month) apiRequest(`/book-clubs/${encodeURIComponent(state.activeClubId || "")}/books/${encodeURIComponent(month.dataset.clubBookMonth || "")}/book-of-month`, { method: "PUT", body: JSON.stringify({ chapterCount: 10 }) }).then(() => loadBookClubsFromApi()).then(() => openClubWorkspace(state.activeClubId)).catch((error) => showNotice(error instanceof Error ? error.message : "Unable to choose the current book."));
 	const remove = target.closest("[data-club-remove-member]");
 	if (remove && state.activeClubId) apiRequest(`/book-clubs/${state.activeClubId}/members/${remove.dataset.clubRemoveMember}`, { method: "DELETE" }).then(() => openClubWorkspace(state.activeClubId)).catch((error) => showNotice(error instanceof Error ? error.message : "Unable to remove that member."));
 	const leave = target.closest("[data-club-leave]");
@@ -865,6 +941,19 @@ refs.clubWorkspaceContent.addEventListener("submit", (event) => {
 	if (!clubId) return;
 	const data = new FormData(form);
 	const action = form.dataset.clubAction;
+	if (action === "current-book") {
+		const bookId = String(data.get("bookId") || "").trim();
+		const chapterCount = Number(data.get("chapterCount"));
+		if (!bookId) return;
+		apiRequest(`/book-clubs/${clubId}/books/${encodeURIComponent(bookId)}/book-of-month`, { method: "PUT", body: JSON.stringify({ chapterCount }) }).then(() => loadBookClubsFromApi()).then(() => openClubWorkspace(clubId)).then(() => showNotice("Current book updated.")).catch((error) => showNotice(error instanceof Error ? error.message : "Unable to update the current book."));
+		return;
+	}
+	if (action === "room-message") {
+		const text = String(data.get("text") || "").trim();
+		if (!text || !state.activeClubRoomId) return;
+		apiRequest(`/book-clubs/${clubId}/messages`, { method: "POST", body: JSON.stringify({ roomId: state.activeClubRoomId, text }) }).then(() => loadClubMessages(clubId)).then(() => { const club = state.bookClubs.find((entry) => entry.id === clubId); if (club) renderClubRoomChatWindow(club); }).catch((error) => showNotice(error instanceof Error ? error.message : "Unable to send this message."));
+		return;
+	}
 	const endpoint = action === "discussion" || action === "chapter-discussion" ? `/book-clubs/${clubId}/discussions` : action === "invite" ? `/book-clubs/${clubId}/invitations` : `/book-clubs/${clubId}/books`;
 	const payload = Object.fromEntries(data);
 	if (action === "chapter-discussion") {
@@ -1008,6 +1097,22 @@ const savedViewButton = savedView && refs.viewNav.querySelector(`button[data-vie
 if (savedViewButton) {
 	savedViewButton.click();
 }
+
+refs.communityTabs.addEventListener("click", (event) => {
+	const target = event.target instanceof HTMLElement ? event.target.closest("button[data-community-tab]") : null;
+	if (!(target instanceof HTMLButtonElement)) {
+		return;
+	}
+	const activeTab = target.dataset.communityTab || "book-clubs";
+	for (const button of refs.communityTabs.querySelectorAll("button[data-community-tab]")) {
+		const selected = button === target;
+		button.classList.toggle("active", selected);
+		button.setAttribute("aria-selected", String(selected));
+	}
+	for (const panel of refs.communityView.querySelectorAll("[data-community-panel]")) {
+		panel.hidden = panel.getAttribute("data-community-panel") !== activeTab;
+	}
+});
 
 refs.resetBookshelfLayout.addEventListener("click", () => {
 	if (!state.currentUser) return;
@@ -1428,8 +1533,8 @@ refs.friendsList.addEventListener("click", (event) => {
 				state.friends = state.friends.filter((entry) => entry.id !== id);
 				if (state.activeFriendId === id) {
 					state.activeFriendId = "";
-					state.chatMessages = [];
-					state.chatLoadError = "";
+					state.friendChatMessages = [];
+					state.friendChatLoadError = "";
 					renderFriendProfile(null);
 				}
 				renderFriendsAndChat();
@@ -1471,11 +1576,7 @@ refs.chatForm.addEventListener("submit", (event) => {
 		refs.chatStatus.textContent = "Sign in to send messages.";
 		return;
 	}
-	if (state.chatMode === "club" && !state.activeClubId) {
-		refs.chatStatus.textContent = "Choose a book club before sending a message.";
-		return;
-	}
-	if (state.chatMode !== "club" && !state.activeFriendId) {
+	if (!state.activeFriendId) {
 		refs.chatStatus.textContent = "Choose a friend before sending a message.";
 		return;
 	}
@@ -1488,18 +1589,45 @@ refs.chatForm.addEventListener("submit", (event) => {
 
 	(async () => {
 		try {
-			await apiRequest(state.chatMode === "club" ? `/book-clubs/${encodeURIComponent(state.activeClubId)}/messages` : "/chat/messages", {
+			await apiRequest("/chat/messages", {
 				method: "POST",
-				body: JSON.stringify(state.chatMode === "club" ? { roomId: state.activeClubRoomId, text } : { friendId: state.activeFriendId, text })
+				body: JSON.stringify({ friendId: state.activeFriendId, text })
 			});
 			refs.chatText.value = "";
-			if (state.chatMode === "club") {
-				await loadClubMessages(state.activeClubId);
-			} else {
-				await loadChatMessages(state.activeFriendId);
-			}
+			await loadChatMessages(state.activeFriendId);
 		} catch (error) {
 			refs.chatStatus.textContent = error instanceof Error ? error.message : "Unable to send message right now.";
+		}
+	})();
+});
+
+refs.clubChatForm.addEventListener("submit", (event) => {
+	event.preventDefault();
+	if (!state.currentUser) {
+		refs.clubChatStatus.textContent = "Sign in to send club messages.";
+		return;
+	}
+	if (!state.activeClubId || !state.activeClubRoomId) {
+		refs.clubChatStatus.textContent = "Choose a book club room before sending a message.";
+		return;
+	}
+
+	const text = String(refs.clubChatText.value || "").trim();
+	if (!text) {
+		refs.clubChatStatus.textContent = "Write a message first.";
+		return;
+	}
+
+	(async () => {
+		try {
+			await apiRequest(`/book-clubs/${encodeURIComponent(state.activeClubId)}/messages`, {
+				method: "POST",
+				body: JSON.stringify({ roomId: state.activeClubRoomId, text })
+			});
+			refs.clubChatText.value = "";
+			await loadClubMessages(state.activeClubId);
+		} catch (error) {
+			refs.clubChatStatus.textContent = error instanceof Error ? error.message : "Unable to send club message right now.";
 		}
 	})();
 });

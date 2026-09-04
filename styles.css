@@ -909,19 +909,42 @@ body {
 	grid-template-columns: 0.9fr 1.1fr;
 }
 
+.community-tabs {
+	display: flex;
+	gap: 0.35rem;
+	padding: 1rem 1.25rem 0;
+}
+
+.community-tabs button {
+	flex: 0 0 auto;
+	padding: 0.55rem 0.9rem;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.52);
+	color: var(--ink-soft);
+	font-size: 0.88rem;
+}
+
+.community-tabs button.active {
+	border-color: rgba(19, 111, 99, 0.32);
+	background: rgba(19, 111, 99, 0.12);
+	color: var(--accent);
+}
+
 .community-shell {
 	display: grid;
-	grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.8fr);
-	grid-template-areas:
-		"clubs friends"
-		"chat friends";
-	gap: 1rem;
+	grid-template-columns: 1fr;
+	align-items: stretch;
 	padding: 1.25rem;
 }
 
 .book-clubs-hub,
 .friends-hub,
+.club-chat-room,
+.friend-chat-room,
 .community-chat-room {
+	width: 100%;
+	min-width: 0;
 	padding: 1rem;
 	border: 1px solid rgba(230, 216, 200, 0.9);
 	border-radius: 14px;
@@ -929,22 +952,56 @@ body {
 }
 
 .book-clubs-hub {
-	grid-area: clubs;
+	display: grid;
+	grid-template-columns: minmax(300px, 0.42fr) minmax(0, 1fr);
+	grid-template-areas:
+		"heading heading"
+		"clubs chat"
+		"invites chat";
+	gap: 1rem;
 	background:
 		linear-gradient(135deg, rgba(255, 250, 243, 0.82), rgba(226, 242, 238, 0.55)),
 		rgba(255, 255, 255, 0.54);
 }
 
 .friends-hub {
-	grid-area: friends;
 	display: grid;
+	grid-template-columns: minmax(300px, 0.42fr) minmax(0, 1fr);
+	grid-template-areas:
+		"heading heading"
+		"hint chat"
+		"list chat"
+		"recs activity";
 	align-content: start;
-	gap: 0.85rem;
+	gap: 1rem;
 }
 
-.community-chat-room {
+.club-chat-room,
+.friend-chat-room {
+	padding: 0.9rem;
+	background: rgba(255, 255, 255, 0.62);
+}
+
+.club-chat-room {
 	grid-area: chat;
 }
+
+.friend-chat-room { grid-area: chat; }
+
+.book-clubs-hub > .community-section-heading,
+.friends-hub > .community-section-heading { grid-area: heading; }
+
+.book-clubs-hub > .book-clubs-list { grid-area: clubs; }
+
+.book-clubs-hub > .club-invitations { grid-area: invites; }
+
+.friends-hub > .hint { grid-area: hint; }
+
+.friends-hub > .friends-list { grid-area: list; }
+
+.friends-hub > .recommendations-panel { grid-area: recs; }
+
+.friends-hub > .activity-panel { grid-area: activity; }
 
 .community-section-heading {
 	display: flex;
@@ -1154,6 +1211,175 @@ body {
 .club-room-icon svg {
 	width: 19px;
 	height: 19px;
+}
+
+.club-current-read {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	min-height: 150px;
+	padding: 1rem;
+	border-radius: 14px;
+	background: linear-gradient(135deg, rgba(142, 133, 153, 0.38), rgba(38, 125, 136, 0.34));
+	overflow: hidden;
+}
+
+.club-current-read > div {
+	display: flex;
+	align-items: center;
+	gap: 0.8rem;
+	min-width: 0;
+}
+
+.club-current-read img {
+	width: 74px;
+	aspect-ratio: 2 / 3;
+	border-radius: 6px;
+	object-fit: cover;
+	box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+	transform: rotate(-10deg);
+}
+
+.club-current-read strong,
+.club-current-read b {
+	font-size: 1rem;
+	line-height: 1.15;
+}
+
+.club-current-read small,
+.chapter-row small,
+.club-room-row small {
+	display: block;
+	color: var(--ink-soft);
+	font-size: 0.82rem;
+}
+
+.club-current-read.empty {
+	min-height: auto;
+	background: rgba(31, 42, 53, 0.08);
+}
+
+.current-book-control input {
+	width: 7rem;
+}
+
+.chapter-milestone-card,
+.chapter-safety-note,
+.chapter-directory {
+	padding: 0.9rem;
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.68);
+}
+
+.milestone-date {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.42rem 0.65rem;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	color: var(--ink-soft);
+	font-size: 0.86rem;
+	font-weight: 700;
+}
+
+.milestone-date svg {
+	width: 15px;
+	height: 15px;
+}
+
+.chapter-safety-note {
+	position: relative;
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: center;
+	gap: 0.8rem;
+}
+
+.chapter-safety-note .icon-btn {
+	position: absolute;
+	top: 0.5rem;
+	right: 0.5rem;
+	width: 30px;
+	height: 30px;
+	background: transparent;
+}
+
+.chapter-note-avatar {
+	display: grid;
+	place-items: center;
+	width: 58px;
+	height: 58px;
+	border-radius: 50%;
+	background: #f4f0df;
+	color: var(--accent);
+}
+
+.chapter-note-avatar svg {
+	width: 28px;
+	height: 28px;
+}
+
+.chapter-list {
+	display: grid;
+	gap: 0.35rem;
+}
+
+.chapter-row {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 0.65rem;
+	width: 100%;
+	padding: 0.5rem 0.35rem;
+	border-radius: 10px;
+	background: transparent;
+	color: var(--ink);
+	text-align: left;
+}
+
+.chapter-row.active {
+	background: rgba(19, 111, 99, 0.1);
+}
+
+.club-room-window {
+	display: grid;
+	gap: 0.9rem;
+}
+
+.club-room-window-top {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: center;
+	gap: 0.75rem;
+	padding-bottom: 0.35rem;
+	border-bottom: 1px solid var(--line);
+}
+
+.club-room-window-top h3 {
+	font-family: "Merriweather", Georgia, serif;
+	font-size: clamp(1.35rem, 3vw, 2rem);
+	line-height: 1.12;
+}
+
+.club-room-window .chat-messages {
+	min-height: 320px;
+	max-height: min(52vh, 560px);
+}
+
+.active-club-room-chat {
+	padding: 0.9rem;
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.68);
+}
+
+.active-club-room-chat .chat-messages {
+	min-height: 180px;
+	max-height: 320px;
+	margin-top: 0.35rem;
 }
 
 .club-invitation,
@@ -3094,11 +3320,21 @@ button.month-count.selected strong {
 
 	.community-shell {
 		grid-template-columns: 1fr;
-		grid-template-areas:
-			"clubs"
-			"friends"
-			"chat";
 		padding: 0.85rem;
+	}
+
+	.book-clubs-hub,
+	.friends-hub {
+		grid-template-columns: 1fr;
+		grid-template-areas:
+			"heading"
+			"hint"
+			"clubs"
+			"list"
+			"chat"
+			"invites"
+			"recs"
+			"activity";
 	}
 
 	.club-room-actions,
@@ -3153,6 +3389,8 @@ button.month-count.selected strong {
 
 [data-theme="dark"] .book-clubs-hub,
 [data-theme="dark"] .friends-hub,
+[data-theme="dark"] .club-chat-room,
+[data-theme="dark"] .friend-chat-room,
 [data-theme="dark"] .community-chat-room,
 [data-theme="dark"] .club-workspace-dialog {
 	border-color: rgba(255, 255, 255, 0.08);
@@ -3170,6 +3408,23 @@ button.month-count.selected strong {
 	background: rgba(255, 255, 255, 0.06);
 }
 
+[data-theme="dark"] .chapter-milestone-card,
+[data-theme="dark"] .chapter-safety-note,
+[data-theme="dark"] .chapter-directory,
+[data-theme="dark"] .active-club-room-chat,
+[data-theme="dark"] .club-current-read.empty {
+	border-color: rgba(255, 255, 255, 0.08);
+	background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .club-current-read {
+	background: linear-gradient(135deg, rgba(142, 133, 153, 0.42), rgba(38, 125, 136, 0.46));
+}
+
+[data-theme="dark"] .chapter-note-avatar {
+	background: rgba(244, 240, 223, 0.94);
+}
+
 [data-theme="dark"] .club-workspace-hero {
 	border-color: rgba(255, 255, 255, 0.08);
 	background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(207, 102, 152, 0.12));
@@ -3181,6 +3436,10 @@ button.month-count.selected strong {
 }
 
 [data-theme="dark"] .club-room-row.active {
+	background: rgba(207, 102, 152, 0.14);
+}
+
+[data-theme="dark"] .chapter-row.active {
 	background: rgba(207, 102, 152, 0.14);
 }
 
